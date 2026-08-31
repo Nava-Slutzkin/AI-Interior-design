@@ -1,11 +1,14 @@
 const express = require('express');
 const cors = require('cors');
+const renderRoutes = require('./routes/render.routes');
 
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json()); // מאפשר לקבל מידע בפורמט JSON בבקשות POST
+
+app.use('/api/renders', renderRoutes);
 
 // בדיקת תקינות שהשרת עובד
 app.get('/', (req, res) => {
