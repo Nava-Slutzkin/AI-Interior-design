@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { updateRender } = require('../controllers/render.controller');
-const { authMiddleware } = require('../middlewares/auth.middleware'); 
+const { createRender, getRenderById, updateRender } = require('../controllers/render.controller');
 
-router.put('/:id', authMiddleware, updateRender);
+router.put('/:id', updateRender);
+
 module.exports = router;
