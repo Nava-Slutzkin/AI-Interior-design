@@ -36,3 +36,41 @@ exports.updateRender = async (req, res) => {
 };
 
 
+// פונקציה למחיקת Render לפי מזהה, עם בדיקת הרשאות
+exports.deleteRender = async (req, res) => {
+
+    // לוקח את ה-id מה-URL, למשל DELETE /api/renders/123
+    const { id } = req.params;
+
+    try {
+        // מחפש את ההדמיה לפי ה-id
+        const render = await Render.findById(id);
+
+        // אם ההדמיה לא קיימת, מחזיר 404
+        if (!render) {
+            return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
+        }
+
+        // בודק אם המשתמש הוא admin או הבעלים של ההדמיה
+        const isAdmin = req.user && req.user.role === 'Admin';
+        const isOwner = req.user && render.userId && render.userId.toString() === req.user._id.toString();
+
+        // אם המשתמש לא admin וגם לא הבעלים, אין לו הרשאה למחוק
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ message: 'אין לך הרשאה למחוק הדמיה זו' });
+        }
+
+        // מוחק את ההדמיה מהמסד
+        await Render.findByIdAndDelete(id);
+
+        // מחזיר הודעת הצלחה
+        return res.status(200).json({ message: 'ההדמיה נמחקה בהצלחה' });
+    }
+
+    catch (error) {
+        // אם קרתה שגיאה, מחזיר 500 עם פרטי השגיאה
+        res.status(500).json({ message: 'שגיאת שרת במחיקת ההדמיה', error: error.message });
+    }
+}
+
+
