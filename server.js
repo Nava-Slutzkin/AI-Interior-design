@@ -1,19 +1,36 @@
-const express = require('express');
-const cors = require('cors');
+require('dotenv').config(); // טוענת משתני סביבה מקובץ .env
+const express = require('express'); // ייבוא ספריית Express 
+const cors = require('cors'); // ייבוא ספריית CORS שהיא מאפשרת לקבל בקשות לשרת ממקורות שונים
+const mongoose = require('mongoose'); //חיבור לדטא-בייס
+const authRoutes = require('./routers/auth.router.js'); //מייבאת את הנתונים מהקובץ הזה
 
-const app = express();
+const app = express(); // יצירת מופע של אפליקציית Express
 
-// Middlewares
-app.use(cors());
-app.use(express.json()); // מאפשר לקבל מידע בפורמט JSON בבקשות POST
+app.use(cors()); // הגדרה לשרת לקבל בקשות ממקורות שונים
+app.use(express.json()); // הגדרה לשרת לקבל בקשות עם תוכן JSON
 
-// בדיקת תקינות שהשרת עובד
+// בדיקת תקינות
 app.get('/', (req, res) => {
     res.send('Server is running successfully!');
 });
 
-// הגדרת הפורט והרצת השרת
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+app.use('/api/auth', authRoutes);// במקרה והכתובת מתחילה במה שכתוב פה, השרת ילך לקובץ המוגדר
+
+const PORT = process.env.PORT || 5000; // הגדרת הכתובת שעליה ירוץ האתר והוספת ערך ברירת מחדל
+
+// חיבור הדטאבייס
+const startServer = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log('MongoDB connected successfully');
+
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('MongoDB connection failed:', error.message);
+        process.exit(1);
+    }
+};
+
+startServer(); // קריאה לפונקציה שמתחילה את השרת
