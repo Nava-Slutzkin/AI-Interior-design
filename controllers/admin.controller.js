@@ -10,9 +10,7 @@ exports.getAllUsers = async (req, res) => {
         // שליפת המשתמשים ללא שדה הסיסמה (סודיות ואבטחה)
         const users = await User.find()
             .select('-password')
-            .skip(skip)
-            .limit(limit);
-
+    
         return res.status(200).json(users);
 
     } catch (error) {
@@ -43,6 +41,11 @@ exports.updateUserRole = async (req, res) => {
             { new: true, runValidators: true }
         ).select('-password'); // לא מחזיר את הסיסמה 
 
+        // בדיקה אם המשתמש קיים במסד הנתונים
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'משתמש לא נמצא' });
+        }
+
         return res.status(200).json(updatedUser);
 
     } catch (error) {
@@ -51,3 +54,23 @@ exports.updateUserRole = async (req, res) => {
 };
 
 
+exports.deleteUser = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // בודק אם המשתמש הוא admin
+        if (!req.user || req.user.role !== 'Admin') {
+            return res.status(403).json({ message: 'אין לך הרשאה למחוק משתמשים' });
+        }
+
+        const deletedUser = await User.findByIdAndDelete(id);
+
+        if (!deletedUser) {
+            return res.status(404).json({ message: 'המשתמש לא נמצא' });
+        }
+
+        return res.status(200).json({ message: 'המשתמש נמחק בהצלחה' });
+
+    } catch (error) {
+        res.status(500).json({ message: 'שגיאת שרת במחיקת המשתמש', error: error.message });
+    }
+};
