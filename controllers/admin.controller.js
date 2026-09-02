@@ -1,4 +1,6 @@
 const User = require('../models/user.model');
+const Render = require('../models/render.model');
+const Order = require('../models/order.model');
 
 //פונקציה לקבלת כל המשתמשים, עם בדיקת הרשאות של admin בלבד
 exports.getAllUsers = async (req, res) => {
@@ -62,6 +64,11 @@ exports.deleteUser = async (req, res) => {
             return res.status(403).json({ message: 'אין לך הרשאה למחוק משתמשים' });
         }
 
+               // הגנה: מניעת מחיקת החשבון של המנהל עצמו
+        if (req.user._id && req.user._id.toString() === id) {
+            return res.status(400).json({ message: 'אינך יכול למחוק את החשבון של עצמך' });
+        }
+
         const deletedUser = await User.findByIdAndDelete(id);
 
         if (!deletedUser) {
@@ -74,6 +81,36 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({ message: 'שגיאת שרת במחיקת המשתמש', error: error.message });
     }
 };
+
+
+exports.getSystemStats = async (req, res) => {
+    try {
+        // בודק אם המשתמש הוא admin
+        if (!req.user || req.user.role !== 'Admin') {
+            return res.status(403).json({ message: 'אין לך הרשאה לצפייה בסטטיסטיקות המערכת' });
+        }
+
+        // שליפת מספר המשתמשים במסד הנתונים
+        const userCount = await User.countDocuments();  
+
+        // שליפת מספר ההדמיות במסד הנתונים
+        const renderCount = await Render.countDocuments();
+
+        // שליפת מספר ההזמנות במסד הנתונים
+        const orderCount = await Order.countDocuments();
+
+        return res.status(200).json({
+            userCount,
+            renderCount,
+            orderCount
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: 'שגיאת שרת בקבלת סטטיסטיקות המערכת', error: error.message });
+    }
+};
+
+
 
 
 
