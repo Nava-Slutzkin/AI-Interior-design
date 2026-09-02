@@ -20,3 +20,34 @@ exports.getAllUsers = async (req, res) => {
         res.status(500).json({ message: 'שגיאת שרת בקבלת המשתמשים', error: error.message });
     }
 };
+
+
+// פונקציה לעדכון תפקיד המשתמש, עם בדיקת הרשאות של admin בלבד   
+exports.updateUserRole = async (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body;
+    try {
+        // בודק אם המשתמש הוא admin
+        if (!req.user || req.user.role !== 'Admin') {
+            return res.status(403).json({ message: 'אין לך הרשאה לעדכן את תפקיד המשתמש' });
+        }   
+
+        // בדיקה שנשלח תפקיד לעדכון
+        if (!role) {
+            return res.status(400).json({ message: 'יש לספק תפקיד חדש לעדכון' });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            id,
+            { role },
+            { new: true, runValidators: true }
+        ).select('-password'); // לא מחזיר את הסיסמה 
+
+        return res.status(200).json(updatedUser);
+
+    } catch (error) {
+        res.status(500).json({ message: 'שגיאת שרת בעדכון תפקיד המשתמש', error: error.message });
+    }
+};
+
+
