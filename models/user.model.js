@@ -6,24 +6,29 @@ const userSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true, // שדה חובה
-        trim: true // מסיר רווחים מתחילת וסוף המשפט
+        trim: true, // מסיר רווחים מתחילת וסוף המשפט
+        maxlength: 100
     },
     phone: { 
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        maxlength: 20
     },
     email: {
         type: String,
         required: true,
         unique: true, // מונע הכנסת משתמשים עם אותו אימייל
         lowercase: true, // ממיר לאותיות קטנות אוטומטי
-        trim: true
+        trim: true,
+        maxlength: 254
     },
     password: {
         type: String,
         required: true,
-        select: false //מונע מהסיסמה לחזור כברירת מחדל בשאילתות חיפוש
+        select: false,//מונע מהסיסמה לחזור כברירת מחדל בשאילתות חיפוש
+        minlength: 8,
+        maxlength: 12 
     }
 }, { timestamps: true }); // מוסיף אוטומטי שתי שדות למסמך: תאריך יצירה ותאריך שינוי ארוך.
 

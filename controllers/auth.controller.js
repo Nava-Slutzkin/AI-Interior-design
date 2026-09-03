@@ -8,7 +8,8 @@ const generateToken = (userId) => {
     }
 
     return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-        expiresIn: '7d' // הטוקן יהיה בתוקף למשך 7 ימים
+        expiresIn: '15m', // הטוקן יפוג לאחר 15 דקות מטעמי אבטחה
+        algorithm: 'HS256'
     });
 };
 
@@ -34,8 +35,8 @@ const registerUser = async (req, res) => {
         return res.status(400).json({ message: 'Name, phone, email, and password are required.' });
     }
 
-    // בדיקת תקינות למייל מספר טלפון וסיסמא באמצעות סיפריית REGEX
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) || !/^\+?[\d\s().-]{7,20}$/.test(normalizedPhone) || password.length < 8) {
+    // בדיקת תקינות למייל מספר טלפון וסיסמא
+    if (normalizedName.length > 100 || normalizedEmail.length > 254 || normalizedPhone.length > 20 || password.length < 8 || password.length > 128 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) || !/^\+?[\d\s().-]{7,20}$/.test(normalizedPhone)) {
         return res.status(400).json({ message: 'Name, phone, email, or password is invalid.' });
     }
 
@@ -73,34 +74,18 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     const { email, password } = req.body || {}; // פירוק אובייקט הbody שהתקבל כדי לחלץ אימייל וסיסמא
 
-    // שגיאה במקרה וחסרים פרטים
-    if (!email || !password) {
-        return res.status(400).json({
-            message: 'Email and password are required.'
-        });
+    // שיגאה במקרה וחסרים פרטים
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
+        return res.status(400).json({ message: 'Email and password are required.' });
     }
 
-    try {
-        // חיפוש משתמש לפי האימייל שהתקבל מהבקשה במסד נתונים
-        const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
-
-        // אם המשתמש לא נמצא, מחזירים שגיאה
-        if (!user) {
-            return res.status(401).json({
-                message: 'Invalid email or password.'
-            });
+    try {  
+        // מנסים למצוא את המשתמש לפי כתובת המייל, מנקים רווחים והופכים לאותיות קטנות, שולפים גם את הסיסמא המוצפנת לצורך אימות
+        const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password');
+        // אם המשתמש לא נמצא או שהסיסמא שגויה מוחזרת שגיאה
+        if (!user || !(await user.comparePassword(password))) {
+            return res.status(401).json({ message: 'Invalid email or password.' });
         }
-        
-        // השוואת הסיסמה שהזין המשתמש לסיסמה המוצפנת במסד הנתונים באמצעות פונקציית השוואה
-        const isPasswordValid = await user.comparePassword(password);
-
-        // אם הסיסמה לא תואמת, מחזירים שגיאה
-        if (!isPasswordValid) {
-            return res.status(401).json({
-                message: 'Invalid email or password.'
-            });
-        }
-
         // יצירת טוקן חדש עבור המשתמש  לצורך המשך הפעילות באתר
         // השרת לא זוכר את המשתמש מפעולה לפעולה ולכן צריך ליצור לו מזהה
         // כך השרת "יזכור" אותו מבלי לדרוש סיסמא כל פעם מחדש
@@ -112,15 +97,10 @@ const loginUser = async (req, res) => {
             user: toUserResponse(user)
         });
     } catch (error) {
-        return res.status(500).json({
-            message: 'Login failed.',
-            error: error.message
-        });
+        console.error('Login failed:', error);
+        return res.status(500).json({ message: 'Login failed.' });
     }
-};
+}
 
-//ייצוא הפונקציות על מנת להשתמש בהם במקומות אחרים
-module.exports = {
-    loginUser,
-    registerUser
-};
+
+module.exports = { loginUser, registerUser };
