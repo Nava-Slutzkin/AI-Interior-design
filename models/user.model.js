@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema({
         required: true, // שדה חובה
         trim: true // מסיר רווחים מתחילת וסוף המשפט
     },
+    phone: { 
+        type: String,
+        required: true,
+        trim: true
+    },
     email: {
         type: String,
         required: true,
