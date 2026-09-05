@@ -6,6 +6,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const renderRoutes = require('./routes/render.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 // יוצר מופע של השרת
 const app = express();
@@ -19,12 +20,21 @@ app.use(express.json());
 // מאפשר לקבל בקשות URL-encoded, לדוגמה טפסים רגילים
 app.use(express.urlencoded({ extended: true }));
 
-// כל הנתיבים של Render יהיו תחת /api/renders
+
+// רישום ה-Routes בשרת
 app.use('/api/renders', renderRoutes);
+app.use('/api/admin', adminRoutes);
+
 
 // נתיב בסיסי לבדיקה שהשרת חי
 app.get('/', (req, res) => {
   res.send('Server is running successfully!');
 });
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
 
 
