@@ -1,21 +1,23 @@
-// מייבא את Express ויוצר router נפרד לנתיבי Render
 const express = require('express');
 const router = express.Router();
-const { createRender, getUserRenders, getRenderById } = require('../controllers/render.controller.js');
-const requireAuth = require('../middlewares/auth.middleware.js'); // ייבוא המידלוור מהקובץ שלך
 
+// 1. ייבוא מרכזי של כל הפונקציות מה-Controller
+const { 
+    createRender, 
+    getUserRenders, 
+    getRenderById, 
+    updateRender, 
+    deleteRender 
+} = require('../controllers/render.controller');
 
-// מייבא את הפונקציה שמעדכנת Render מה-controller
-const renderController = require('../controllers/render.controller');
+// 2. ייבוא ה-Middleware לאימות המשתמש
+const requireAuth = require('../middlewares/auth.middleware');
 
-// נתיב לעדכון Render לפי מזהה
-// לדוגמה: PUT /api/renders/123
-router.put('/:id', renderController.updateRender);
-// הגדרת נתיב למחיקת הדמיה לפי מזהה (DELETE /api/renders/:id)
-router.delete('/:id', renderController.deleteRender);
-// הנתיב מקבל קודם כל את דרישת ההתחברות (requireAuth), ורק אם היא עוברת, הוא ממשיך לפונקציית היצירה
+// 3. הגדרת הנתיבים המוגנים
 router.post('/', requireAuth, createRender);
 router.get('/', requireAuth, getUserRenders);
 router.get('/:id', requireAuth, getRenderById);
+router.put('/:id', requireAuth, updateRender);
+router.delete('/:id', requireAuth, deleteRender);
 
 module.exports = router;
