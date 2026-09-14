@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routers/auth.router.js'); //מייבאת את הנתונים מהקובץ הזה
 const renderRoutes = require('./routers/render.router.js'); // ייבוא נתיבי ההדמיות.
 const adminRoutes = require('./routers/admin.router.js');
+const createScheduleBlocker = require('./middlewares/scheduleBlocker.middleware.js');
 
 
 // יוצר מופע של השרת
@@ -18,6 +19,9 @@ app.use(cors());
 
 // מאפשר לקבל ולעבד בקשות JSON
 app.use(express.json());
+
+// הגדרת Middleware לחסימת גישה לפי לוח זמנים
+app.use(createScheduleBlocker([6], { message: 'האתר סגור כעת' }));
 
 // מאפשר לקבל בקשות URL-encoded, לדוגמה טפסים רגילים
 app.use(express.urlencoded({ extended: true }));
