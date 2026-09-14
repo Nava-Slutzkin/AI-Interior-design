@@ -24,7 +24,6 @@ app.use(express.json());
 // ניתן להזין כאן כתובות IP שברצונך לחסום
 const blockedIpsList = [
   '123.45.67.89', 
-  '::1' // כתובת IP של localhost (לצורך בדיקה מקומית)
 ];
 
 // הפעלת ה-Middleware גלובלית
@@ -44,8 +43,6 @@ app.use('/api/renders', renderRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use('/api/auth', authRoutes);// במקרה והכתובת מתחילה במה שכתוב פה, השרת ילך לקובץ המוגדר
-
-app.use('/api/renders', renderRoutes); // חיבור נתיבי ההדמיות לכתובת הבסיסית.
 
 
 // בדיקת תקינות
