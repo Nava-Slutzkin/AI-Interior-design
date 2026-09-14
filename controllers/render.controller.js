@@ -75,9 +75,6 @@ exports.deleteRender = async (req, res) => {
 
 
 
-
-
-
 const { OpenAI } = require('openai');
 const Render = require('../models/render.model.js');
 const mongoose = require('mongoose'); // ייבוא Mongoose כדי לבדוק מזהי ObjectId.
