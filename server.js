@@ -20,6 +20,10 @@ app.use(express.json());
 // מאפשר לקבל בקשות URL-encoded, לדוגמה טפסים רגילים
 app.use(express.urlencoded({ extended: true }));
 
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB Connected Successfully'))
+  .catch((err) => console.error('MongoDB Connection Error:', err));
+
 
 // רישום ה-Routes בשרת
 app.use('/api/renders', renderRoutes);

@@ -90,19 +90,20 @@ exports.getSystemStats = async (req, res) => {
             return res.status(403).json({ message: 'אין לך הרשאה לצפייה בסטטיסטיקות המערכת' });
         }
 
-        // שליפת מספר המשתמשים במסד הנתונים
-        const userCount = await User.countDocuments();  
+        const totalUsers = await User.countDocuments();
+        const totalRenders = await Render.countDocuments();
 
-        // שליפת מספר ההדמיות במסד הנתונים
-        const renderCount = await Render.countDocuments();
-
-        // שליפת מספר ההזמנות במסד הנתונים
-        const orderCount = await Order.countDocuments();
+        // חישוב ממוצע תקציב מתוך כל ההדמיות
+        const avgBudgetResult = await Render.aggregate([
+            { $group: { _id: null, avgBudget: { $avg: '$budget' } } }
+        ]);
+        const avgBudget = avgBudgetResult.length > 0 ? avgBudgetResult[0].avgBudget : 0;
 
         return res.status(200).json({
-            userCount,
-            renderCount,
-            orderCount
+            totalUsers,
+            totalRenders,
+            topStyle: 'Modern', // או חישוב דינמי
+            avgBudget
         });
 
     } catch (error) {
