@@ -5,8 +5,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const renderRoutes = require('./routers/render.router');
-const adminRoutes = require('./routers/admin.router');
+const authRoutes = require('./routers/auth.router.js'); //מייבאת את הנתונים מהקובץ הזה
+const renderRoutes = require('./routers/render.router.js'); // ייבוא נתיבי ההדמיות.
+const adminRoutes = require('./routers/admin.router.js');
+
 
 // יוצר מופע של השרת
 const app = express();
@@ -19,26 +21,37 @@ app.use(express.json());
 
 // מאפשר לקבל בקשות URL-encoded, לדוגמה טפסים רגילים
 app.use(express.urlencoded({ extended: true }));
-
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB Connected Successfully'))
-  .catch((err) => console.error('MongoDB Connection Error:', err));
-
-
 // רישום ה-Routes בשרת
 app.use('/api/renders', renderRoutes);
+
 app.use('/api/admin', adminRoutes);
 
+app.use('/api/auth', authRoutes);// במקרה והכתובת מתחילה במה שכתוב פה, השרת ילך לקובץ המוגדר
 
-// נתיב בסיסי לבדיקה שהשרת חי
+app.use('/api/renders', renderRoutes); // חיבור נתיבי ההדמיות לכתובת הבסיסית.
+
+
+// בדיקת תקינות
 app.get('/', (req, res) => {
   res.send('Server is running successfully!');
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
 
+const PORT = process.env.PORT || 5000; // הגדרת הכתובת שעליה ירוץ האתר והוספת ערך ברירת מחדל
 
+// חיבור הדטאבייס
+const startServer = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log('MongoDB connected successfully');
 
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('MongoDB connection failed:', error.message);
+        process.exit(1);
+    }
+};
+
+startServer(); // קריאה לפונקציה שמתחילה את השרת

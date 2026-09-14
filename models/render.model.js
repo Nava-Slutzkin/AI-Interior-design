@@ -1,33 +1,75 @@
 // מייבא את Mongoose כדי להגדיר את הסכמה למסד הנתונים
 const mongoose = require('mongoose');
 
-// מגדיר את הסכמה של אובייקט Render
-const renderSchema = new mongoose.Schema({
-    // מזהה המשתמש שההדמיה שייכת לו
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+// סכמה פנימית עבור פריט ברשימת הקניות (רהיטים/אקססוריז)
+const itemSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  price: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  link: {
+    type: String,
+    trim: true
+  }
+});
 
-    // תמונה מקורית, לא חובה
-    originalImage: { type: String },
+// סכמה ראשית עבור הדמיה
+const renderSchema = new mongoose.Schema(
+  {
+    // קישור למשתמש שיצר את ההדמיה (עבור דף לקוח)
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
 
-    // טקסט ההנחיה/פרומפט, לא חובה
-    promptText: { type: String },
+    // --- קלטי המשתמש (דף בית / דף ביניים) ---
+    promptText: {
+      type: String,
+      trim: true
+    },
+    uploadedImage: {
+      type: String // URL של התמונה שהעלה המשתמש
+    },
+    audioUrl: {
+      type: String // URL של הקלטת הקול
+    },
+    formDetails: {
+      roomType: { type: String, trim: true }, // למשל: סלון, חדר שינה
+      style: { type: String, trim: true },    // למשל: מודרני, כפרי (חשוב לסטטיסטיקות מנהל!)
+      budget: { type: Number, default: 0 },   // תקציב מבוקש (חשוב לסטטיסטיקות מנהל!)
+      dimensions: { type: String, trim: true } // מידות החדר
+    },
 
-    // תמונת התוצאה הסופית, חובה
-    resultImage: { type: String, required: true },
+    // --- תוצאות ה-AI (דף תוצאה) ---
+    resultImage: {
+      type: String,
+      required: true // URL של תמונת ההדמיה שג'ונרטה
+    },
+    items: [itemSchema], // רשימת הרהיטים והאקססוריז (ניתן להוסיף/למחוק/לעדכן)
 
-    // מערך של פריטים/מוצרים שקשורים להדמיה
-    items: [{
-        name: String,
-        price: Number,
-        link: String
-    }],
+    // --- מצב שמירה וניהול ---
+    isSaved: {
+      type: Boolean,
+      default: true // האם שמור באוסף ההדמיות של הלקוח
+    }
+  },
+  {
+    // מוסיף אוטומטית שדות createdAt ו-updatedAt
+    // חיוני עבור הגרפים של המנהל (סה"כ הדמיות לפי חודשים)
+    timestamps: true 
+  }
+);
 
-    // תקציב אפשרי עבור ההדמיה
-    budget: { type: Number },
+// יצירת אינדקס לשיפור ביצועי שליפה לפי משתמש
+renderSchema.index({ userId: 1, createdAt: -1 });
 
-    // סגנון עיצובי/סטייל
-    style: { type: String }
-}, { timestamps: true });
+const Render = mongoose.model('Render', renderSchema);
 
-// מייצא את המודל בשם Render כדי להשתמש בו ב-controller
-module.exports = mongoose.model('Render', renderSchema);
+module.exports = Render;
