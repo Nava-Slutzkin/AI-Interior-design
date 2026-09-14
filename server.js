@@ -5,8 +5,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const renderRoutes = require('./routes/render.routes');
-const adminRoutes = require('./routes/admin.routes');
+const renderRoutes = require('./routers/render.router');
+const adminRoutes = require('./routers/admin.router');
 
 // יוצר מופע של השרת
 const app = express();
