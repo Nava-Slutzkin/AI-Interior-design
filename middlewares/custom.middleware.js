@@ -43,7 +43,42 @@ const createIpBlocker = (blockedIps = [], options = {}) => {
   };
 };
 
+
+/**
+ *  Middleware Creator: לוגר שגיאות מותאם סביבה (Error Logger)
+ * בסביבת פיתוח (development) - מדפיס את הפרטים המלאים לקונסול.
+ * בסביבת ייצור (production) - כותב את הודעת השגיאה לקובץ לוג בשרת.
+ */
+const createErrorLogger = (options = {}) => {
+  const logFilePath = options.logFilePath || path.join(__dirname, 'error.log');
+
+  return (err, req, res, next) => {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${req.method} ${req.originalUrl} - ${err.stack || err.message}\n`;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.error('=== [DEV ERROR LOG] ===');
+      console.error(err);
+    } else {
+      // כתיבה אסינכרונית לקובץ לוג בסביבת Production
+      fs.appendFile(logFilePath, logMessage, (fileErr) => {
+        if (fileErr) {
+          console.error('שגיאה בכתיבה לקובץ הלוג:', fileErr);
+        }
+      });
+    }
+
+    // החזרת תשובה ללקוח
+    res.status(err.status || 500).json({
+      status: 'error',
+      message: process.env.NODE_ENV === 'development' ? err.message : 'שגיאת שרת פנימית.'
+    });
+  };
+};
+
+
 module.exports = {
   createScheduleBlocker,
-  createIpBlocker
+  createIpBlocker,
+  createErrorLogger
 };

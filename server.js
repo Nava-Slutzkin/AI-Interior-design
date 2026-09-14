@@ -53,6 +53,10 @@ app.get('/', (req, res) => {
   res.send('Server is running successfully!');
 });
 
+//  חיבור לוגר השגיאות - בסוף כל הראוטרים!
+app.use(createErrorLogger({
+  logFilePath: './error.log'
+}));
 
 const PORT = process.env.PORT || 5000; // הגדרת הכתובת שעליה ירוץ האתר והוספת ערך ברירת מחדל
 
