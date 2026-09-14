@@ -18,6 +18,7 @@ const requireAuth = (req, res, next) => {
         req.userId = payload.id;
         return next();
     } catch (error) {
+        console.error('Authentication error:', error);
         return res.status(401).json({ message: 'Invalid or expired authentication token.' });
     }
 };

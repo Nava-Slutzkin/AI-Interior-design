@@ -7,18 +7,21 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+// const fetch = require('node-fetch'); // ייתכן שתצטרכי אם את עובדת עם גרסת Node ישנה מ-18
+
 const createRender = async (req, res) => {
     try {
-        // 1. חילוץ הנתונים שהגיעו מהלקוח (אחרי שסודרו באובייקט)
+        // 1. חילוץ הנתונים שהגיעו מהלקוח
         const { text, formDetails, uploadedImage, audioUrl } = req.body;
 
-        // מציאת מזהה המשתמש (בהנחה שיש Middleware של התחברות ששם את ה-ID ב-req.user)
+        // מציאת מזהה המשתמש
         const userId = req.userId;
 
         if (!userId) {
             return res.status(401).json({ message: 'User must be authenticated.' });
         }
-        // 2. בניית הפרומפט (ההנחיה) ל-AI מתוך שלל הנתונים
+        
+        // 2. בניית הפרומפט (ההנחיה) ל-AI
         let aiPrompt = text ? `${text}. ` : '';
         if (formDetails) {
             aiPrompt += `Room type: ${formDetails.roomType || 'any'}. `;
@@ -26,18 +29,28 @@ const createRender = async (req, res) => {
             if (formDetails.budget) aiPrompt += `Budget: ${formDetails.budget} ILS. `;
         }
 
-        // 3. קריאה ל-DALL-E 3 ליצירת תמונת ההדמיה
-        const imageResponse = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: `A highly realistic interior design photo of: ${aiPrompt}. Photorealistic, beautifully lit, 8k resolution.`,
-            n: 1, // תמונה אחת
-            size: "1024x1024",
-        });
-        const resultImageUrl = imageResponse.data[0].url;
+        // 3. יצירת URL לתמונה באמצעות Pollinations.ai
+        // Pollinations מקבל את ה-Prompt בתוך ה-URL עצמו (URL-encoded)
+        const detailedPrompt = `A highly realistic interior design photo of: ${aiPrompt}. Photorealistic, beautifully lit, 8k resolution.`;
+        const encodedPrompt = encodeURIComponent(detailedPrompt);
+        
+        // יצירת מספר אקראי ל-Seed כדי להבטיח תמונות שונות לבקשות זהות
+        const seed = Math.floor(Math.random() * 1000000);
+        
+        // ה-URL שיוחזר ללקוח ושיישמר ב-DB. 
+        // המודל של flux מפיק תוצאות מעולות.
+        const resultImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
-        // 4. קריאה ל-GPT-4o-mini ליצירת רשימת הרהיטים (רשימת הקניות)
+        // אופציונלי: בדיקה שהתמונה אכן נוצרה בהצלחה לפני שנשמור (לא חובה, אבל מומלץ)
+        // const imageCheckResponse = await fetch(resultImageUrl, { method: 'HEAD' });
+        // if (!imageCheckResponse.ok) {
+        //     throw new Error("Failed to generate image via Pollinations.ai");
+        // }
+
+
+        // 4. קריאה ל-GPT ליצירת רשימת הרהיטים (רשימת הקניות) - ללא שינוי
         const chatResponse = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
+            model: "gpt-4o-mini", // או מודל טקסט חינמי אחר אם תרצי בהמשך
             messages: [
                 {
                     role: "system",
@@ -53,11 +66,9 @@ const createRender = async (req, res) => {
                     content: aiPrompt
                 }
             ],
-            // הכרחת המודל להחזיר אובייקט JSON תקני כדי שנוכל לשמור ב-DB
             response_format: { type: "json_object" }
         });
 
-        // המרת התשובה מה-AI (שהיא טקסט בפורמט JSON) לאובייקט JavaScript אמיתי
         const aiData = JSON.parse(chatResponse.choices[0].message.content);
         const generatedItems = aiData.items || [];
 
@@ -67,12 +78,12 @@ const createRender = async (req, res) => {
             promptText: text,
             uploadedImage,
             audioUrl,
-            formDetails, // הנתונים נשמרים כפי שהם כדי לשמש את הסטטיסטיקות של דף המנהל
-            resultImage: resultImageUrl,
+            formDetails,
+            resultImage: resultImageUrl, // ה-URL של Pollinations.ai
             items: generatedItems
         });
 
-        // 6. החזרת התשובה ללקוח כדי שיוכל להציג את דף התוצאה
+        // 6. החזרת התשובה ללקוח
         return res.status(201).json({
             id: newRender._id,
             resultImage: newRender.resultImage,

@@ -33,15 +33,16 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true }); // מוסיף אוטומטי שתי שדות למסמך: תאריך יצירה ותאריך שינוי ארוך.
 
 // פונקציה שמופעלת לפני שמירת המשתמש במסד הנתונים
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next(); // אם הסיסמה לא השתנתה מאז הפעם האחרונה, אין צורך להצפין אותה שוב – ממשיכים הלאה
+userSchema.pre('save', async function () {
+    if (!this.isModified('password')) return ; // אם הסיסמה לא השתנתה מאז הפעם האחרונה, אין צורך להצפין אותה שוב – ממשיכים הלאה
 
     try {
         const salt = await bcrypt.genSalt(10);// מייצרת "מלח"  – מחרוזת אקראית שמחוזקת לתהליך ההצפנה כדי להפוך אותה לבטוחה יותר מפני פריצה.
         this.password = await bcrypt.hash(this.password, salt); // מצפינה את הסיסמא הגולמית יחד עם "המלח" ושמירה של הסיסמא המוצפנת
-        next();
+        return ;
     } catch (error) {
-        next(error);
+        console.error('Password encryption failed:', error);
+        throw error;
     }
 });
 

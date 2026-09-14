@@ -63,9 +63,10 @@ const registerUser = async (req, res) => {
         });
     } catch (error) { // טיפול בשגיאות
         if (error.code === 11000) {
+
             return res.status(409).json({ message: 'A user with this email already exists.' });
         }
-
+        console.error('Registration failed:', error);
         return res.status(500).json({ message: 'Registration failed.' });
     }
 };
