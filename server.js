@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routers/auth.router.js'); //מייבאת את הנתונים מהקובץ הזה
 const renderRoutes = require('./routers/render.router.js'); // ייבוא נתיבי ההדמיות.
 const adminRoutes = require('./routers/admin.router.js');
-const createScheduleBlocker = require('./middlewares/scheduleBlocker.middleware.js');
+const {createScheduleBlocker,createIpBlocker,createErrorLogger} = require('./middlewares/custom.middleware.js'); // ייבוא המידלוור המותאם אישית
 
 
 // יוצר מופע של השרת
