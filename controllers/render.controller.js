@@ -54,6 +54,9 @@ const deleteRender = async (req, res) => {
     }
 };
 
+
+
+// הפעלת החיבור ל-OpenAI באמצעות המפתח מקובץ ה-.env
 // הפעלת החיבור ל-OpenAI
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
