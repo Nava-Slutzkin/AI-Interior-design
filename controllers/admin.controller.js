@@ -1,6 +1,5 @@
 const User = require('../models/user.model');
 const Render = require('../models/render.model');
-const Order = require('../models/order.model');
 
 //פונקציה לקבלת כל המשתמשים, עם בדיקת הרשאות של admin בלבד
 exports.getAllUsers = async (req, res) => {
