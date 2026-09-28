@@ -56,11 +56,81 @@ const deleteRender = async (req, res) => {
 
 
 
-// הפעלת החיבור ל-OpenAI באמצעות המפתח מקובץ ה-.env
-// הפעלת החיבור ל-OpenAI
+// הפעלת החיבור ל-AI דרך OpenRouter / OpenAI-compatible API
+const aiApiKey = process.env.OPENAI_API_KEY;
+const aiBaseUrl = process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1';
+const aiModel = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: aiApiKey,
+    baseURL: aiBaseUrl,
+    defaultHeaders: {
+        'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
+        'X-Title': 'AI Interior Design'
+    }
 });
+
+const parseAiResponse = (content) => {
+    if (!content || typeof content !== 'string') {
+        throw new Error('AI returned an empty response.');
+    }
+
+    let cleaned = content.trim();
+
+    if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    }
+
+    try {
+        const parsed = JSON.parse(cleaned);
+        if (parsed && typeof parsed === 'object') {
+            return parsed;
+        }
+    } catch (error) {
+        // Try to extract the first valid JSON object if the model wrapped the response in extra text.
+        const match = cleaned.match(/\{[\s\S]*\}/);
+        if (match) {
+            const parsed = JSON.parse(match[0]);
+            if (parsed && typeof parsed === 'object') {
+                return parsed;
+            }
+        }
+        throw new Error('AI returned a malformed JSON payload.');
+    }
+
+    throw new Error('AI response was not a valid object.');
+};
+
+const buildAiDesignPayload = async (aiPrompt) => {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+        throw new Error('OPENAI_API_KEY is missing. AI generation is unavailable.');
+    }
+
+    const chatResponse = await openai.chat.completions.create({
+        model: aiModel,
+        messages: [
+            {
+                role: 'system',
+                content: `You are an expert interior designer. Return ONLY valid JSON. The JSON must have:
+- "summary": a short, helpful design summary in Hebrew
+- "items": an array with 3 to 5 items suitable for the room
+Each item must include:
+- "name": string in Hebrew
+- "price": number in ILS
+- "link": a realistic placeholder link to a store
+Do not include markdown fences, comments, or extra text.`
+            },
+            {
+                role: 'user',
+                content: aiPrompt
+            }
+        ],
+        response_format: { type: 'json_object' }
+    });
+
+    return parseAiResponse(chatResponse.choices[0].message.content);
+};
 
 // 3. יצירת הדמיה חדשה בעזרת AI
 const createRender = async (req, res) => {
@@ -71,7 +141,7 @@ const createRender = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ message: 'User must be authenticated.' });
         }
-        
+
         let aiPrompt = text ? `${text}. ` : '';
         if (formDetails) {
             aiPrompt += `Room type: ${formDetails.roomType || 'any'}. `;
@@ -79,34 +149,13 @@ const createRender = async (req, res) => {
             if (formDetails.budget) aiPrompt += `Budget: ${formDetails.budget} ILS. `;
         }
 
-        const detailedPrompt = `A highly realistic interior design photo of: ${aiPrompt}. Photorealistic, beautifully lit, 8k resolution.`;
+        const aiData = await buildAiDesignPayload(aiPrompt || 'Create a modern interior design concept.');
+        const generatedItems = Array.isArray(aiData.items) ? aiData.items.slice(0, 5) : [];
+
+        const detailedPrompt = `A highly realistic interior design photo of: ${aiPrompt || 'modern room'}. Photorealistic, beautifully lit, 8k resolution.`;
         const encodedPrompt = encodeURIComponent(detailedPrompt);
         const seed = Math.floor(Math.random() * 1000000);
-        
         const resultImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
-
-        const chatResponse = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                {
-                    role: "system",
-                    content: `You are an expert interior designer. Based on the user's room description, generate a JSON object with a single array called "items". 
-          This array should contain 3-5 items (furniture or accessories) suitable for the room. 
-          Each item must have:
-          - "name" (string, the item name in Hebrew)
-          - "price" (number, estimated average price in ILS)
-          - "link" (string, a placeholder or real link to a store)`
-                },
-                {
-                    role: "user",
-                    content: aiPrompt
-                }
-            ],
-            response_format: { type: "json_object" }
-        });
-
-        const aiData = JSON.parse(chatResponse.choices[0].message.content);
-        const generatedItems = aiData.items || [];
 
         const newRender = await Render.create({
             userId,
@@ -115,18 +164,24 @@ const createRender = async (req, res) => {
             audioUrl,
             formDetails,
             resultImage: resultImageUrl,
-            items: generatedItems
+            items: generatedItems,
+            summary: aiData.summary || ''
         });
 
         return res.status(201).json({
             id: newRender._id,
             resultImage: newRender.resultImage,
-            items: newRender.items
+            items: newRender.items,
+            summary: newRender.summary,
+            source: 'AI-generated'
         });
 
     } catch (error) {
         console.error('Error generating render:', error);
-        return res.status(500).json({ message: 'Failed to generate render with AI.', error: error.message });
+        return res.status(500).json({
+            message: 'Failed to generate render with AI.',
+            error: error.message
+        });
     }
 };
 

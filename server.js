@@ -26,6 +26,13 @@ const blockedIpsList = [
   '123.45.67.89', 
 ];
 
+
+// בדיקת תקינות
+app.get('/', (req, res) => {
+  res.send('Server is running successfully!');
+});
+
+
 // הפעלת ה-Middleware גלובלית
 // מומלץ לשים את שורה זו בראש הקובץ (לפני הראוטרים) כדי לחסום גישה מיד בכניסה
 app.use(createIpBlocker(blockedIpsList, {
@@ -44,11 +51,6 @@ app.use('/api/admin', adminRoutes);
 
 app.use('/api/auth', authRoutes);// במקרה והכתובת מתחילה במה שכתוב פה, השרת ילך לקובץ המוגדר
 
-
-// בדיקת תקינות
-app.get('/', (req, res) => {
-  res.send('Server is running successfully!');
-});
 
 //  חיבור לוגר השגיאות - בסוף כל הראוטרים!
 app.use(createErrorLogger({
