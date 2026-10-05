@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken'); // ייבוא ספריית JWT ליצירת
 const User = require('../models/user.model.js'); // מייבאת את מודל המשתמש על מנת להשתמש  בו
 
 const ADMIN_EMAILS = new Set([
-    '0556758176nr@gmail.com',
-    'nava0533160319@gmail.com'
+    process.env.ADMIN1_EMAIL,
+    process.env.ADMIN2_EMAIL
 ]);
 
 const normalizeRole = (email) => {

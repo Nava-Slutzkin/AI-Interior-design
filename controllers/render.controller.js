@@ -174,7 +174,7 @@ const createRender = async (req, res) => {
         const detailedPrompt = `A highly realistic interior design photo of: ${aiPrompt || 'modern room'}. Photorealistic, beautifully lit, 8k resolution.`;
         const encodedPrompt = encodeURIComponent(detailedPrompt);
         const seed = Math.floor(Math.random() * 1000000);
-        const resultImageUrl = `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+        const resultImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
         const newRender = await Render.create({
             userId,
