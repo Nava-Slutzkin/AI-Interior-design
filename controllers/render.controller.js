@@ -8,19 +8,27 @@ const updateRender = async (req, res) => {
     const { items = [] } = req.body;
 
     try {
-        const updatedRender = await Render.findByIdAndUpdate(
-            id,
-            { items },
-            { new: true, runValidators: true }
-        );
+        if (!Array.isArray(items)) {
+            return res.status(400).json({ message: 'Items must be an array.' });
+        }
 
-        if (!updatedRender) {
+        const render = await Render.findById(id);
+        if (!render) {
             return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
         }
 
+        const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+        const isOwner = String(render.userId) === String(req.userId || req.user?._id);
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ message: 'אין לך הרשאה לעדכן הדמיה זו' });
+        }
+
+        render.items = items;
+        await render.save();
+
         return res.status(200).json({
-            id: updatedRender._id,
-            items: updatedRender.items
+            id: render._id,
+            items: render.items
         });
     } catch (error) {
         return res.status(500).json({ message: 'שגיאת שרת בעדכון ההדמיה', error: error.message });
@@ -38,7 +46,7 @@ const deleteRender = async (req, res) => {
             return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
         }
 
-        const isAdmin = req.user && req.user.role === 'Admin';
+        const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
         const isOwner = req.user && render.userId && render.userId.toString() === req.user._id.toString();
 
         if (!isAdmin && !isOwner) {
@@ -56,10 +64,10 @@ const deleteRender = async (req, res) => {
 // הגדרת החיבור ל-AI
 const aiApiKey = process.env.OPENAI_API_KEY;
 const aiBaseUrl = process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1';
-const aiModel = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+const aiModel = process.env.AI_MODEL || 'nvidia/nemotron-3-super-120b-a12b:free';
 
 const openai = new OpenAI({
-    apiKey: aiApiKey || 'dummy_key', // מונע קריסה בטעינה ראשונית אם אין מפתח
+    apiKey: aiApiKey || 'missing-api-key',
     baseURL: aiBaseUrl,
     defaultHeaders: {
         'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
@@ -98,17 +106,8 @@ const parseAiResponse = (content) => {
 };
 
 const buildAiDesignPayload = async (aiPrompt) => {
-    // אם אין מפתח מוגדר ב-env, נחזיר נתוני ברירת מחדל במקום לקרוס
-    if (!process.env.OPENAI_API_KEY) {
-        console.warn('OPENAI_API_KEY is missing. Using fallback mock data.');
-        return {
-            summary: 'עיצוב פנים מודרני ונקי עם אווירה חמה ונעימה.',
-            items: [
-                { name: 'ספה מודרנית', price: 3500, link: '[https://example.com/sofa](https://example.com/sofa)' },
-                { name: 'שולחן קפה מעץ', price: 1200, link: '[https://example.com/table](https://example.com/table)' },
-                { name: 'מנורת עמידה מעצבים', price: 650, link: '[https://example.com/lamp](https://example.com/lamp)' }
-            ]
-        };
+    if (!aiApiKey) {
+        throw new Error('OPENAI_API_KEY is not configured on the server.');
     }
 
     try {
@@ -117,41 +116,47 @@ const buildAiDesignPayload = async (aiPrompt) => {
             messages: [
                 {
                     role: 'system',
-                    content: `You are an expert interior designer. Return ONLY valid JSON. The JSON must have:
-- "summary": a short, helpful design summary in Hebrew
-- "items": an array with 3 to 5 items suitable for the room
-Each item must include:
-- "name": string in Hebrew
-- "price": number in ILS
-- "link": a realistic placeholder link to a store
-Do not include markdown fences, comments, or extra text.`
+                    content: `You are an interior designer creating a specific, practical plan for a real customer's room. Use the customer's room type, dimensions, existing conditions, needs, style, colors, budget, and constraints. Do not give generic living-room suggestions when the request describes another room. Return ONLY valid JSON with:
+- "summary": a concise Hebrew description of the requested room design
+- "items": 3 to 5 Hebrew furniture/accessory suggestions that fit this exact design
+Each item must include "name" (specific item in Hebrew) and "price" (realistic estimated price in ILS). Keep the total within the stated budget when one is provided. Prices are estimates, not live store quotes. Do not invent store URLs. Do not include markdown, comments, or extra text.`
                 },
                 {
                     role: 'user',
                     content: aiPrompt
                 }
             ],
-            response_format: { type: 'json_object' }
+            response_format: { type: 'json_object' },
+            max_tokens: 1200
         });
 
         return parseAiResponse(chatResponse.choices[0].message.content);
     } catch (err) {
         console.error('OpenAI/OpenRouter call failed:', err.message);
-        // במקרה של שגיאת תקשורת מול ה-AI נחזיר נתוני ברירת מחדל
-        return {
-            summary: 'עיצוב פנים מודרני מותאם אישית.',
-            items: [
-                { name: 'כורסה מעוצבת', price: 1800, link: '[https://example.com](https://example.com)' },
-                { name: 'שטיח סלון', price: 950, link: '[https://example.com](https://example.com)' }
-            ]
-        };
+        throw err;
     }
 };
 
 // 3. יצירת הדמיה חדשה בעזרת AI
 const createRender = async (req, res) => {
     try {
-        const { text, formDetails, uploadedImage, audioUrl } = req.body;
+        const body = req.body || {};
+        const { text: submittedText, promptText, formDetails: submittedFormDetails, form, uploadedImage, audioUrl } = body;
+        const formValues = form && typeof form === 'object'
+            ? form
+            : (submittedFormDetails && typeof submittedFormDetails === 'object' ? submittedFormDetails : body);
+        const formDetails = submittedFormDetails && typeof submittedFormDetails === 'object'
+            ? submittedFormDetails
+            : {
+                roomType: formValues.roomType || formValues.customRoomType || '',
+                style: formValues.style || '',
+                budget: Number(formValues.budget) || 0,
+                dimensions: formValues.dimensions || formValues.roomSize || ''
+            };
+        const text = submittedText || promptText || Object.entries(formValues)
+            .filter(([, value]) => ['string', 'number'].includes(typeof value) && String(value).trim())
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('. ');
         
         // שליפת ה-userId מתוך המידלוור של האימות (תומך ב-req.userId או req.user._id)
         const userId = req.userId || (req.user && req.user._id);
@@ -160,46 +165,56 @@ const createRender = async (req, res) => {
             return res.status(401).json({ message: 'משתמש חייב להיות מחובר כדי ליצור הדמיה.' });
         }
 
-        let aiPrompt = text ? `${text}. ` : '';
-        if (formDetails) {
-            aiPrompt += `Room type: ${formDetails.roomType || 'any'}. `;
-            aiPrompt += `Style: ${formDetails.style || 'modern'}. `;
-            if (formDetails.budget) aiPrompt += `Budget: ${formDetails.budget} ILS. `;
+        const aiPrompt = [
+            text,
+            `Room type: ${formDetails.roomType || 'not specified'}`,
+            `Style: ${formDetails.style || 'not specified'}`,
+            formDetails.dimensions ? `Room dimensions: ${formDetails.dimensions}` : '',
+            formDetails.budget ? `Maximum budget: ${formDetails.budget} ILS` : ''
+        ].filter(Boolean).join('\n');
+
+        const aiData = await buildAiDesignPayload(aiPrompt);
+        const generatedItems = (Array.isArray(aiData.items) ? aiData.items : [])
+            .filter((item) => typeof item?.name === 'string' && item.name.trim() && Number.isFinite(Number(item.price)) && Number(item.price) >= 0)
+            .slice(0, 5)
+            .map((item) => ({
+                name: item.name.trim(),
+                price: Number(item.price),
+                link: `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(item.name.trim())}`
+            }));
+
+        if (!aiData.summary || generatedItems.length < 3) {
+            throw new Error('The design model returned an incomplete summary or fewer than three suitable items.');
         }
-
-        const aiData = await buildAiDesignPayload(aiPrompt || 'Create a modern interior design concept.');
-        const generatedItems = Array.isArray(aiData.items) ? aiData.items.slice(0, 5) : [];
-
-        // יצירת קישור ישיר לתמונה מ-Pollinations
-        const detailedPrompt = `A highly realistic interior design photo of: ${aiPrompt || 'modern room'}. Photorealistic, beautifully lit, 8k resolution.`;
-        const encodedPrompt = encodeURIComponent(detailedPrompt);
-        const seed = Math.floor(Math.random() * 1000000);
-        const resultImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
 
         const newRender = await Render.create({
             userId,
-            promptText: text,
+            promptText: text || aiPrompt,
             uploadedImage,
             audioUrl,
             formDetails,
-            resultImage: resultImageUrl,
+            resultImage: '',
             items: generatedItems,
             summary: aiData.summary || ''
         });
 
         return res.status(201).json({
             id: newRender._id,
-            resultImage: newRender.resultImage,
             items: newRender.items,
             summary: newRender.summary,
-            source: 'AI-generated'
+            source: 'OpenRouter free text model'
         });
 
     } catch (error) {
-        console.error('Error generating render:', error);
-        return res.status(500).json({
-            message: 'נכשל ביצירת ההדמיה מול ה-AI.',
-            error: error.message
+        const statusCode = error.statusCode || ([402, 429].includes(error.status) ? error.status : 502);
+        console.error('Error generating render:', error.message);
+        return res.status(statusCode).json({
+            message: statusCode === 402
+                ? 'המודל החינמי לא זמין בחשבון OpenRouter כרגע.'
+                : statusCode === 429
+                    ? 'המודל החינמי עמוס כרגע. נסי שוב מאוחר יותר.'
+                    : 'יצירת רשימת העיצוב נכשלה. בדקו את הגדרות ה־AI ונסו שוב.',
+            error: [402, 429].includes(statusCode) ? `OpenRouter returned HTTP ${statusCode}.` : error.message
         });
     }
 };
@@ -228,6 +243,7 @@ const getUserRenders = async (req, res) => {
         }
 
         const renders = await Render.find(filter)
+            .select('_id promptText formDetails summary items createdAt isSaved')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);
@@ -264,6 +280,7 @@ const getRenderById = async (req, res) => {
             items: render.items,
             promptText: render.promptText,
             formDetails: render.formDetails,
+            summary: render.summary,
             createdAt: render.createdAt
         });
     } catch (error) {

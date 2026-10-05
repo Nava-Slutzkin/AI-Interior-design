@@ -5,6 +5,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const { MongoStore } = require('connect-mongo');
 const authRoutes = require('./routers/auth.router.js'); //מייבאת את הנתונים מהקובץ הזה
 const renderRoutes = require('./routers/render.router.js'); // ייבוא נתיבי ההדמיות.
 const adminRoutes = require('./routers/admin.router.js');
@@ -14,11 +16,40 @@ const {createScheduleBlocker,createIpBlocker,createErrorLogger} = require('./mid
 // יוצר מופע של השרת
 const app = express();
 
-// מאפשר בקשות מכל דומיין/פורט לשרת
-app.use(cors());
+// מאפשר בקשות מכל   דומיין/פורט לשרת
+const allowedOrigins = new Set([
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  ...(process.env.CLIENT_ORIGINS || '').split(',').map((origin) => origin.trim()).filter(Boolean)
+]);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error('Origin is not allowed by CORS.'));
+  },
+  credentials: true
+}));
 
 // מאפשר לקבל ולעבד בקשות JSON
 app.use(express.json());
+app.use(session({
+  name: 'aihome.sid',
+  secret: process.env.JWT_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    collectionName: 'sessions',
+    ttl: 60 * 60 * 24 * 7
+  }),
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 24 * 7
+  }
+}));
 
 
 // בדיקת תקינות

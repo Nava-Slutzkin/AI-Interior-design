@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken'); // ייבוא ספריית JWT ליצירת טוקנים מאובטחים המאמתים את זהות המשתמש
 const User = require('../models/user.model.js'); // מייבאת את מודל המשתמש על מנת להשתמש  בו
 
 const ADMIN_EMAILS = new Set([
@@ -11,17 +10,23 @@ const normalizeRole = (email) => {
     return ADMIN_EMAILS.has(normalizedEmail) ? 'Admin' : 'User';
 };
 
-// הגדרת פונקציה שמקבלת מזהה משתמש ומחזירה טוקן מוצפן
-const generateToken = (userId) => {
-    if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET is not configured.');
-    }
-
-    return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-        expiresIn: '15m', // הטוקן יפוג לאחר 15 דקות מטעמי אבטחה
-        algorithm: 'HS256'
+const startSession = (req, userId) => new Promise((resolve, reject) => {
+    req.session.regenerate((regenerateError) => {
+        if (regenerateError) return reject(regenerateError);
+        req.session.userId = String(userId);
+        req.session.save((saveError) => {
+            if (saveError) return reject(saveError);
+            resolve();
+        });
     });
-};
+});
+
+const clearSessionCookie = (res) => res.clearCookie('aihome.sid', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/'
+});
 
 // פונקציה שמקבלת אובייקט משתמש ומחזירה אובייקט חדש להחזרה שמכיל רק נתונים לא רגישים
 const toUserResponse = (user) => ({
@@ -66,11 +71,9 @@ const registerUser = async (req, res) => {
             password,
             role: normalizeRole(normalizedEmail)
         });
+        await startSession(req, user._id);
 
-        // אם הגענו עד לכאן זה אומר שהכל היה תקין
         return res.status(201).json({
-            // מחזירים את הטוקן שנוצר עבור המשתמש החדש ומחזירים את הנתונים שלו ללא פרטים רגישים
-            token: generateToken(user._id),
             user: toUserResponse(user)
         });
     } catch (error) { // טיפול בשגיאות
@@ -109,11 +112,8 @@ const loginUser = async (req, res) => {
         // יצירת טוקן חדש עבור המשתמש  לצורך המשך הפעילות באתר
         // השרת לא זוכר את המשתמש מפעולה לפעולה ולכן צריך ליצור לו מזהה
         // כך השרת "יזכור" אותו מבלי לדרוש סיסמא כל פעם מחדש
-        const token = generateToken(user._id);
-
-        // הגדרת אובייקט המשתמש ללא הנתונים החסויים כדי להחזיר אותו
+        await startSession(req, user._id);
         return res.status(200).json({
-            token,
             user: toUserResponse(user)
         });
     } catch (error) {
@@ -122,5 +122,14 @@ const loginUser = async (req, res) => {
     }
 }
 
+const getCurrentUser = (req, res) => res.status(200).json({ user: toUserResponse(req.user) });
 
-module.exports = { loginUser, registerUser };
+const logoutUser = (req, res) => {
+    req.session.destroy((error) => {
+        clearSessionCookie(res);
+        if (error) return res.status(500).json({ message: 'Logout failed.' });
+        return res.status(200).json({ message: 'Logged out.' });
+    });
+};
+
+module.exports = { loginUser, registerUser, getCurrentUser, logoutUser };

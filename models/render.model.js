@@ -50,7 +50,11 @@ const renderSchema = new mongoose.Schema(
     // --- תוצאות ה-AI (דף תוצאה) ---
     resultImage: {
       type: String,
-      required: true // URL של תמונת ההדמיה שג'ונרטה
+      default: ''
+    },
+    summary: {
+      type: String,
+      trim: true
     },
     items: [itemSchema], // רשימת הרהיטים והאקססוריז (ניתן להוסיף/למחוק/לעדכן)
 
