@@ -4,8 +4,9 @@ const Render = require('../models/render.model');
 //פונקציה לקבלת כל המשתמשים, עם בדיקת הרשאות של admin בלבד
 exports.getAllUsers = async (req, res) => {
     try {
+        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
         // בודק אם המשתמש הוא admin
-       if (!req.user || req.user.role !== 'Admin') {
+       if (!isAdmin) {
             return res.status(403).json({ message: 'אין לך הרשאה לצפות במשתמשים' });
         } 
         // שליפת המשתמשים ללא שדה הסיסמה (סודיות ואבטחה)
@@ -26,8 +27,9 @@ exports.updateUserRole = async (req, res) => {
     const { id } = req.params;
     const { role } = req.body;
     try {
+        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
         // בודק אם המשתמש הוא admin
-        if (!req.user || req.user.role !== 'Admin') {
+        if (!isAdmin) {
             return res.status(403).json({ message: 'אין לך הרשאה לעדכן את תפקיד המשתמש' });
         }   
 
@@ -58,8 +60,9 @@ exports.updateUserRole = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     const { id } = req.params;
     try {
+        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
         // בודק אם המשתמש הוא admin
-        if (!req.user || req.user.role !== 'Admin') {
+        if (!isAdmin) {
             return res.status(403).json({ message: 'אין לך הרשאה למחוק משתמשים' });
         }
 
@@ -84,8 +87,9 @@ exports.deleteUser = async (req, res) => {
 
 exports.getSystemStats = async (req, res) => {
     try {
+        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
         // בודק אם המשתמש הוא admin
-        if (!req.user || req.user.role !== 'Admin') {
+        if (!isAdmin) {
             return res.status(403).json({ message: 'אין לך הרשאה לצפייה בסטטיסטיקות המערכת' });
         }
 

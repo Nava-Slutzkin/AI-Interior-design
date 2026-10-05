@@ -1,6 +1,16 @@
 const jwt = require('jsonwebtoken'); // ייבוא ספריית JWT ליצירת טוקנים מאובטחים המאמתים את זהות המשתמש
 const User = require('../models/user.model.js'); // מייבאת את מודל המשתמש על מנת להשתמש  בו
 
+const ADMIN_EMAILS = new Set([
+    '0556758176nr@gmail.com',
+    'nava0533160319@gmail.com'
+]);
+
+const normalizeRole = (email) => {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    return ADMIN_EMAILS.has(normalizedEmail) ? 'Admin' : 'User';
+};
+
 // הגדרת פונקציה שמקבלת מזהה משתמש ומחזירה טוקן מוצפן
 const generateToken = (userId) => {
     if (!process.env.JWT_SECRET) {
@@ -19,6 +29,7 @@ const toUserResponse = (user) => ({
     name: user.name,
     phone: user.phone,
     email: user.email,
+    role: user.role || 'User',
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
 });
@@ -52,7 +63,8 @@ const registerUser = async (req, res) => {
             name: normalizedName,
             phone: normalizedPhone,
             email: normalizedEmail,
-            password
+            password,
+            role: normalizeRole(normalizedEmail)
         });
 
         // אם הגענו עד לכאן זה אומר שהכל היה תקין
@@ -87,6 +99,13 @@ const loginUser = async (req, res) => {
         if (!user || !(await user.comparePassword(password))) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
+
+        const shouldBeAdmin = normalizeRole(user.email) === 'Admin';
+        if (shouldBeAdmin && user.role !== 'Admin') {
+            user.role = 'Admin';
+            await user.save();
+        }
+
         // יצירת טוקן חדש עבור המשתמש  לצורך המשך הפעילות באתר
         // השרת לא זוכר את המשתמש מפעולה לפעולה ולכן צריך ליצור לו מזהה
         // כך השרת "יזכור" אותו מבלי לדרוש סיסמא כל פעם מחדש

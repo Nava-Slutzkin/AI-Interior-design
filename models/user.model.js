@@ -29,6 +29,11 @@ const userSchema = new mongoose.Schema({
         select: false,//מונע מהסיסמה לחזור כברירת מחדל בשאילתות חיפוש
         minlength: 8,
         maxlength: 12 
+    },
+    role: {
+        type: String,
+        enum: ['User', 'Admin'],
+        default: 'User'
     }
 }, { timestamps: true }); // מוסיף אוטומטי שתי שדות למסמך: תאריך יצירה ותאריך שינוי ארוך.
 

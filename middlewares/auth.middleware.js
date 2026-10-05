@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const User = require('../models/user.model');
 
-const requireAuth = (req, res, next) => {
+const requireAuth = async (req, res, next) => {
     const authorization = req.get('authorization') || '';
     const [scheme, token] = authorization.split(' ');
 
@@ -15,7 +16,13 @@ const requireAuth = (req, res, next) => {
             return res.status(401).json({ message: 'Invalid authentication token.' });
         }
 
+        const user = await User.findById(payload.id).select('-password');
+        if (!user) {
+            return res.status(401).json({ message: 'User not found.' });
+        }
+
         req.userId = payload.id;
+        req.user = user;
         return next();
     } catch (error) {
         console.error('Authentication error:', error);
