@@ -4,14 +4,14 @@ const jwt = require('jsonwebtoken');
 const ADMIN_EMAILS = new Set([
     process.env.ADMIN1_EMAIL,
     process.env.ADMIN2_EMAIL
-]);
+].map((email) => String(email || '').trim().toLowerCase()).filter(Boolean));
 
 const normalizeRole = (email) => {
     const normalizedEmail = String(email || '').trim().toLowerCase();
     return ADMIN_EMAILS.has(normalizedEmail) ? 'Admin' : 'User';
 };
 
-// יצירת טוקן JWT
+// פונקציה ליצירת טוקן JWT תקין
 const generateToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
@@ -26,9 +26,9 @@ const toUserResponse = (user) => ({
     updatedAt: user.updatedAt
 });
 
-// פונקציה אסינכרונית לרישום משתמש חדש
+// רישום משתמש חדש
 const registerUser = async (req, res) => {
-    const { name, phone, email, password, accountMode, adminCode } = req.body || {};
+    const { name, phone, email, password, accountMode } = req.body || {};
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const normalizedName = typeof name === 'string' ? name.trim() : '';
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
@@ -43,8 +43,8 @@ const registerUser = async (req, res) => {
 
     const isAdminEmail = ADMIN_EMAILS.has(normalizedEmail);
     const requestedAdmin = accountMode === 'Admin';
-    if (requestedAdmin && (!isAdminEmail || !process.env.ADMIN_REGISTRATION_CODE || adminCode !== process.env.ADMIN_REGISTRATION_CODE)) {
-        return res.status(403).json({ message: 'הרשמת מנהלים דורשת כתובת מאושרת וקוד הזמנה תקין.' });
+    if (requestedAdmin && !isAdminEmail) {
+        return res.status(403).json({ message: 'הרשמת מנהלים זמינה רק לשתי כתובות המייל שאושרו.' });
     }
     if (isAdminEmail && !requestedAdmin) {
         return res.status(403).json({ message: 'כתובת זו שמורה למנהל. יש לבחור במצב מנהל.' });
@@ -79,7 +79,7 @@ const registerUser = async (req, res) => {
     }
 };
 
-// פונקציה אסינכרונית להתחברות לקוח
+// התחברות משתמש
 const loginUser = async (req, res) => {
     const { email, password } = req.body || {};
 
@@ -111,7 +111,7 @@ const loginUser = async (req, res) => {
     }
 };
 
-// שליפת המשתמש הנוכחי באמצעות טוקן מההדר (Header)
+// שליפת המשתמש הנוכחי באמצעות הטוקן
 const getCurrentUser = async (req, res) => {
     const authorization = req.get('authorization') || '';
     const [scheme, token] = authorization.split(' ');
@@ -136,7 +136,6 @@ const getCurrentUser = async (req, res) => {
 };
 
 const logoutUser = (req, res) => {
-    // בשיטת JWT ההתנתקות מתבצעת בצד לקוח על ידי מחיקת הטוקן
     return res.status(200).json({ message: 'Logged out.' });
 };
 
