@@ -57,7 +57,7 @@ app.use(createErrorLogger({
   logFilePath: './error.log'
 }));
 
-const PORT = process.env.PORT || 5000; // הגדרת הכתובת שעליה ירוץ האתר והוספת ערך ברירת מחדל
+const PORT = process.env.PORT || 1000; // הגדרת הכתובת שעליה ירוץ האתר והוספת ערך ברירת מחדל
 
 // חיבור הדטאבייס
 const startServer = async () => {
