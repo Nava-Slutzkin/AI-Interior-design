@@ -38,6 +38,21 @@ exports.updateUserRole = async (req, res) => {
             return res.status(400).json({ message: 'יש לספק תפקיד חדש לעדכון' });
         }
 
+        const targetUser = await User.findById(id);
+        if (!targetUser) {
+            return res.status(404).json({ message: 'משתמש לא נמצא' });
+        }
+        const protectedAdminEmails = new Set([
+            '0556758176nr@gmail.com',
+            'nava0533160319@gmail.com'
+        ]);
+        if (String(role).toLowerCase() === 'admin' && !protectedAdminEmails.has(targetUser.email.toLowerCase())) {
+            return res.status(403).json({ message: 'לא ניתן להעניק הרשאת מנהל לחשבון זה.' });
+        }
+        if (String(targetUser.role).toLowerCase() === 'admin' && String(role).toLowerCase() !== 'admin') {
+            return res.status(403).json({ message: 'לא ניתן להסיר הרשאת מנהל מחשבון מנהל מוגן.' });
+        }
+
         const updatedUser = await User.findByIdAndUpdate(
             id,
             { role },
@@ -98,7 +113,7 @@ exports.getSystemStats = async (req, res) => {
 
         // חישוב ממוצע תקציב מתוך כל ההדמיות
         const avgBudgetResult = await Render.aggregate([
-            { $group: { _id: null, avgBudget: { $avg: '$budget' } } }
+            { $group: { _id: null, avgBudget: { $avg: '$formDetails.budget' } } }
         ]);
         const avgBudget = avgBudgetResult.length > 0 ? avgBudgetResult[0].avgBudget : 0;
 
@@ -111,6 +126,38 @@ exports.getSystemStats = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ message: 'שגיאת שרת בקבלת סטטיסטיקות המערכת', error: error.message });
+    }
+};
+
+exports.getAllRenders = async (req, res) => {
+    try {
+        if (!req.user || String(req.user.role || '').toLowerCase() !== 'admin') {
+            return res.status(403).json({ message: 'אין לך הרשאה לצפות בהדמיות.' });
+        }
+        const renders = await Render.find()
+            .select('_id userId formDetails promptText summary createdAt')
+            .populate('userId', 'name email')
+            .sort({ createdAt: -1 });
+        return res.status(200).json(renders.map((render) => ({
+            ...render.toObject(),
+            ownerName: render.userId?.name || render.userId?.email || 'לא ידוע',
+            userId: render.userId?._id || render.userId
+        })));
+    } catch (error) {
+        return res.status(500).json({ message: 'שגיאת שרת בקבלת ההדמיות.' });
+    }
+};
+
+exports.deleteRender = async (req, res) => {
+    try {
+        if (!req.user || String(req.user.role || '').toLowerCase() !== 'admin') {
+            return res.status(403).json({ message: 'אין לך הרשאה למחוק הדמיות.' });
+        }
+        const deleted = await Render.findByIdAndDelete(req.params.id);
+        if (!deleted) return res.status(404).json({ message: 'ההדמיה לא נמצאה.' });
+        return res.status(200).json({ message: 'ההדמיה נמחקה.' });
+    } catch (error) {
+        return res.status(400).json({ message: 'לא ניתן למחוק את ההדמיה.' });
     }
 };
 

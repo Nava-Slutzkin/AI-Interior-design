@@ -8,15 +8,19 @@ const updateRender = async (req, res) => {
     const { items = [] } = req.body;
 
     try {
-        const updatedRender = await Render.findByIdAndUpdate(
-            id,
-            { items },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedRender) {
+        const render = await Render.findById(id);
+        if (!render) {
             return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
         }
+
+        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
+        const isOwner = req.userId && render.userId.toString() === String(req.userId);
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ message: 'אין לך הרשאה לעדכן הדמיה זו' });
+        }
+
+        render.items = items;
+        const updatedRender = await render.save();
 
         return res.status(200).json({
             id: updatedRender._id,
@@ -54,12 +58,14 @@ const deleteRender = async (req, res) => {
 };
 
 // הגדרת החיבור ל-AI
-const aiApiKey = process.env.OPENAI_API_KEY;
+const aiApiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
 const aiBaseUrl = process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1';
 const aiModel = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+const imageApiToken = process.env.HF_API_TOKEN;
+const imageModel = process.env.HF_IMAGE_MODEL || 'stabilityai/stable-diffusion-3-medium-diffusers';
 
 const openai = new OpenAI({
-    apiKey: aiApiKey || 'dummy_key', // מונע קריסה בטעינה ראשונית אם אין מפתח
+    apiKey: aiApiKey || 'missing_api_key',
     baseURL: aiBaseUrl,
     defaultHeaders: {
         'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
@@ -98,18 +104,7 @@ const parseAiResponse = (content) => {
 };
 
 const buildAiDesignPayload = async (aiPrompt) => {
-    // אם אין מפתח מוגדר ב-env, נחזיר נתוני ברירת מחדל במקום לקרוס
-    if (!process.env.OPENAI_API_KEY) {
-        console.warn('OPENAI_API_KEY is missing. Using fallback mock data.');
-        return {
-            summary: 'עיצוב פנים מודרני ונקי עם אווירה חמה ונעימה.',
-            items: [
-                { name: 'ספה מודרנית', price: 3500, link: '[https://example.com/sofa](https://example.com/sofa)' },
-                { name: 'שולחן קפה מעץ', price: 1200, link: '[https://example.com/table](https://example.com/table)' },
-                { name: 'מנורת עמידה מעצבים', price: 650, link: '[https://example.com/lamp](https://example.com/lamp)' }
-            ]
-        };
-    }
+    if (!aiApiKey) throw new Error('AI_PROVIDER_NOT_CONFIGURED');
 
     try {
         const chatResponse = await openai.chat.completions.create({
@@ -134,18 +129,55 @@ Do not include markdown fences, comments, or extra text.`
             response_format: { type: 'json_object' }
         });
 
-        return parseAiResponse(chatResponse.choices[0].message.content);
+        const parsed = parseAiResponse(chatResponse.choices[0]?.message?.content);
+        if (!Array.isArray(parsed.items) || !parsed.items.length || typeof parsed.summary !== 'string') {
+            throw new Error('AI returned an incomplete design.');
+        }
+        parsed.items = parsed.items.slice(0, 5).map((item) => ({
+            name: String(item.name || 'פריט עיצוב'),
+            price: Math.max(0, Number(item.price) || 0),
+            link: `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(String(item.name || 'עיצוב פנים'))}`
+        }));
+        return parsed;
     } catch (err) {
         console.error('OpenAI/OpenRouter call failed:', err.message);
-        // במקרה של שגיאת תקשורת מול ה-AI נחזיר נתוני ברירת מחדל
-        return {
-            summary: 'עיצוב פנים מודרני מותאם אישית.',
-            items: [
-                { name: 'כורסה מעוצבת', price: 1800, link: '[https://example.com](https://example.com)' },
-                { name: 'שטיח סלון', price: 950, link: '[https://example.com](https://example.com)' }
-            ]
-        };
+        throw new Error('AI_PROVIDER_UNAVAILABLE');
     }
+};
+
+const generateRoomImage = async (prompt) => {
+    if (!imageApiToken) return null;
+
+    const response = await fetch(`https://router.huggingface.co/hf-inference/models/${imageModel}`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${imageApiToken}`,
+            'Content-Type': 'application/json',
+            Accept: 'image/*'
+        },
+        body: JSON.stringify({
+            inputs: prompt,
+            parameters: {
+                negative_prompt: 'text, watermark, logo, blurry, distorted furniture',
+                width: 1024,
+                height: 768
+            }
+        }),
+        signal: AbortSignal.timeout(90000)
+    });
+
+    if (!response.ok) {
+        const providerMessage = await response.text();
+        console.warn('Image inference failed:', response.status, providerMessage.slice(0, 300));
+        return null;
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.startsWith('image/')) return null;
+
+    const image = Buffer.from(await response.arrayBuffer());
+    if (!image.length || image.length > 8 * 1024 * 1024) return null;
+    return `data:${contentType};base64,${image.toString('base64')}`;
 };
 
 // 3. יצירת הדמיה חדשה בעזרת AI
@@ -160,6 +192,10 @@ const createRender = async (req, res) => {
             return res.status(401).json({ message: 'משתמש חייב להיות מחובר כדי ליצור הדמיה.' });
         }
 
+        if (!aiApiKey) {
+            return res.status(503).json({ message: 'שירות ה־AI עדיין לא הוגדר. הוסיפו מפתח ספק AI לקובץ .env של השרת.' });
+        }
+
         let aiPrompt = text ? `${text}. ` : '';
         if (formDetails) {
             aiPrompt += `Room type: ${formDetails.roomType || 'any'}. `;
@@ -167,14 +203,17 @@ const createRender = async (req, res) => {
             if (formDetails.budget) aiPrompt += `Budget: ${formDetails.budget} ILS. `;
         }
 
-        const aiData = await buildAiDesignPayload(aiPrompt || 'Create a modern interior design concept.');
+        const aiData = await buildAiDesignPayload(aiPrompt || 'צור הצעת עיצוב פנים מודרנית ומזמינה.');
         const generatedItems = Array.isArray(aiData.items) ? aiData.items.slice(0, 5) : [];
 
-        // יצירת קישור ישיר לתמונה מ-Pollinations
-        const detailedPrompt = `A highly realistic interior design photo of: ${aiPrompt || 'modern room'}. Photorealistic, beautifully lit, 8k resolution.`;
-        const encodedPrompt = encodeURIComponent(detailedPrompt);
-        const seed = Math.floor(Math.random() * 1000000);
-        const resultImageUrl = `[https://image.pollinations.ai/prompt/$](https://image.pollinations.ai/prompt/$){encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+        let generatedImageUrl = null;
+        try {
+            generatedImageUrl = await generateRoomImage(
+                `Photorealistic interior design visualization of ${aiPrompt}. Realistic furniture scale, coherent architecture, warm natural daylight, editorial interior photography, no text, no watermark.`
+            );
+        } catch (imageError) {
+            console.warn('Image inference unavailable:', imageError.message);
+        }
 
         const newRender = await Render.create({
             userId,
@@ -182,21 +221,23 @@ const createRender = async (req, res) => {
             uploadedImage,
             audioUrl,
             formDetails,
-            resultImage: resultImageUrl,
+            resultImage: generatedImageUrl || '',
             items: generatedItems,
-            summary: aiData.summary || ''
+            summary: aiData.summary || '',
+            imageGenerated: Boolean(generatedImageUrl)
         });
 
         return res.status(201).json({
             id: newRender._id,
-            resultImage: newRender.resultImage,
-            items: newRender.items,
-            summary: newRender.summary,
+            imageGenerated: newRender.imageGenerated,
             source: 'AI-generated'
         });
 
     } catch (error) {
         console.error('Error generating render:', error);
+        if (error.message === 'AI_PROVIDER_UNAVAILABLE') {
+            return res.status(503).json({ message: 'שירות ה־AI אינו זמין כרגע. נסו שוב בעוד כמה דקות.' });
+        }
         return res.status(500).json({
             message: 'נכשל ביצירת ההדמיה מול ה-AI.',
             error: error.message
@@ -262,6 +303,8 @@ const getRenderById = async (req, res) => {
             id: render._id,
             resultImage: render.resultImage,
             items: render.items,
+            summary: render.summary,
+            imageGenerated: render.imageGenerated,
             promptText: render.promptText,
             formDetails: render.formDetails,
             createdAt: render.createdAt

@@ -34,9 +34,31 @@ const toUserResponse = (user) => ({
     updatedAt: user.updatedAt
 });
 
+const getCurrentUser = async (req, res) => {
+    const authorization = req.get('authorization') || '';
+    const [scheme, token] = authorization.split(' ');
+    if (scheme !== 'Bearer' || !token) {
+        return res.status(401).json({ message: 'Authentication required.' });
+    }
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+        const user = await User.findById(payload.id);
+        if (!user) return res.status(401).json({ message: 'User not found.' });
+        const actualRole = normalizeRole(user.email);
+        if (user.role !== actualRole) {
+            user.role = actualRole;
+            await user.save();
+        }
+        return res.status(200).json({ user: toUserResponse(user) });
+    } catch (error) {
+        return res.status(401).json({ message: 'Invalid or expired authentication token.' });
+    }
+};
+
 // פונקציה אסינכרונית לרישום משתמש חדש
 const registerUser = async (req, res) => {
-    const { name, phone, email, password } = req.body || {}; // חילוץ הנתונים מהבאדי
+    const { name, phone, email, password, accountMode, adminCode } = req.body || {}; // חילוץ הנתונים מהבאדי
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''; // נירמול הנתונים שיהיו בתבנית אחידה
     const normalizedName = typeof name === 'string' ? name.trim() : '';
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
@@ -49,6 +71,15 @@ const registerUser = async (req, res) => {
     // בדיקת תקינות למייל מספר טלפון וסיסמא
     if (normalizedName.length > 100 || normalizedEmail.length > 254 || normalizedPhone.length > 20 || password.length < 8 || password.length > 128 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) || !/^\+?[\d\s().-]{7,20}$/.test(normalizedPhone)) {
         return res.status(400).json({ message: 'Name, phone, email, or password is invalid.' });
+    }
+
+    const isAdminEmail = ADMIN_EMAILS.has(normalizedEmail);
+    const requestedAdmin = accountMode === 'Admin';
+    if (requestedAdmin && (!isAdminEmail || !process.env.ADMIN_REGISTRATION_CODE || adminCode !== process.env.ADMIN_REGISTRATION_CODE)) {
+        return res.status(403).json({ message: 'הרשמת מנהלים דורשת כתובת מאושרת וקוד הזמנה תקין.' });
+    }
+    if (isAdminEmail && !requestedAdmin) {
+        return res.status(403).json({ message: 'כתובת זו שמורה למנהל. יש לבחור במצב מנהל.' });
     }
 
     try {
@@ -64,7 +95,7 @@ const registerUser = async (req, res) => {
             phone: normalizedPhone,
             email: normalizedEmail,
             password,
-            role: normalizeRole(normalizedEmail)
+            role: requestedAdmin ? 'Admin' : 'User'
         });
 
         // אם הגענו עד לכאן זה אומר שהכל היה תקין
@@ -100,9 +131,9 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
-        const shouldBeAdmin = normalizeRole(user.email) === 'Admin';
-        if (shouldBeAdmin && user.role !== 'Admin') {
-            user.role = 'Admin';
+        const actualRole = normalizeRole(user.email);
+        if (user.role !== actualRole) {
+            user.role = actualRole;
             await user.save();
         }
 
@@ -123,4 +154,4 @@ const loginUser = async (req, res) => {
 }
 
 
-module.exports = { loginUser, registerUser };
+module.exports = { loginUser, registerUser, getCurrentUser };
