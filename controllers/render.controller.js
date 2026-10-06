@@ -8,23 +8,27 @@ const updateRender = async (req, res) => {
     const { items = [] } = req.body;
 
     try {
+        if (!Array.isArray(items)) {
+            return res.status(400).json({ message: 'Items must be an array.' });
+        }
+
         const render = await Render.findById(id);
         if (!render) {
             return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
         }
 
-        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
-        const isOwner = req.userId && render.userId.toString() === String(req.userId);
+        const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+        const isOwner = String(render.userId) === String(req.userId || req.user?._id);
         if (!isAdmin && !isOwner) {
             return res.status(403).json({ message: 'אין לך הרשאה לעדכן הדמיה זו' });
         }
 
         render.items = items;
-        const updatedRender = await render.save();
+        await render.save();
 
         return res.status(200).json({
-            id: updatedRender._id,
-            items: updatedRender.items
+            id: render._id,
+            items: render.items
         });
     } catch (error) {
         return res.status(500).json({ message: 'שגיאת שרת בעדכון ההדמיה', error: error.message });
@@ -42,7 +46,7 @@ const deleteRender = async (req, res) => {
             return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
         }
 
-        const isAdmin = req.user && req.user.role === 'Admin';
+        const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
         const isOwner = req.user && render.userId && render.userId.toString() === req.user._id.toString();
 
         if (!isAdmin && !isOwner) {
@@ -112,21 +116,18 @@ const buildAiDesignPayload = async (aiPrompt) => {
             messages: [
                 {
                     role: 'system',
-                    content: `You are an expert interior designer. Return ONLY valid JSON. The JSON must have:
-- "summary": a short, helpful design summary in Hebrew
-- "items": an array with 3 to 5 items suitable for the room
-Each item must include:
-- "name": string in Hebrew
-- "price": number in ILS
-- "link": a realistic placeholder link to a store
-Do not include markdown fences, comments, or extra text.`
+                    content: `You are an interior designer creating a specific, practical plan for a real customer's room. Use the customer's room type, dimensions, existing conditions, needs, style, colors, budget, and constraints. Do not give generic living-room suggestions when the request describes another room. Return ONLY valid JSON with:
+- "summary": a concise Hebrew description of the requested room design
+- "items": 3 to 5 Hebrew furniture/accessory suggestions that fit this exact design
+Each item must include "name" (specific item in Hebrew) and "price" (realistic estimated price in ILS). Keep the total within the stated budget when one is provided. Prices are estimates, not live store quotes. Do not invent store URLs. Do not include markdown, comments, or extra text.`
                 },
                 {
                     role: 'user',
                     content: aiPrompt
                 }
             ],
-            response_format: { type: 'json_object' }
+            response_format: { type: 'json_object' },
+            max_tokens: 1200
         });
 
         const parsed = parseAiResponse(chatResponse.choices[0]?.message?.content);
@@ -136,7 +137,7 @@ Do not include markdown fences, comments, or extra text.`
         parsed.items = parsed.items.slice(0, 5).map((item) => ({
             name: String(item.name || 'פריט עיצוב'),
             price: Math.max(0, Number(item.price) || 0),
-            link: `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(String(item.name || 'עיצוב פנים'))}`
+            link: `[https://www.google.com/search?tbm=shop&q=$](https://www.google.com/search?tbm=shop&q=$){encodeURIComponent(String(item.name || 'עיצוב פנים'))}`
         }));
         return parsed;
     } catch (err) {
@@ -148,7 +149,7 @@ Do not include markdown fences, comments, or extra text.`
 const generateRoomImage = async (prompt) => {
     if (!imageApiToken) return null;
 
-    const response = await fetch(`https://router.huggingface.co/hf-inference/models/${imageModel}`, {
+    const response = await fetch(`[https://router.huggingface.co/hf-inference/models/$](https://router.huggingface.co/hf-inference/models/$){imageModel}`, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${imageApiToken}`,
@@ -183,9 +184,24 @@ const generateRoomImage = async (prompt) => {
 // 3. יצירת הדמיה חדשה בעזרת AI
 const createRender = async (req, res) => {
     try {
-        const { text, formDetails, uploadedImage, audioUrl } = req.body;
+        const body = req.body || {};
+        const { text: submittedText, promptText, formDetails: submittedFormDetails, form, uploadedImage, audioUrl } = body;
+        const formValues = form && typeof form === 'object'
+            ? form
+            : (submittedFormDetails && typeof submittedFormDetails === 'object' ? submittedFormDetails : body);
+        const formDetails = submittedFormDetails && typeof submittedFormDetails === 'object'
+            ? submittedFormDetails
+            : {
+                roomType: formValues.roomType || formValues.customRoomType || '',
+                style: formValues.style || '',
+                budget: Number(formValues.budget) || 0,
+                dimensions: formValues.dimensions || formValues.roomSize || ''
+            };
+        const text = submittedText || promptText || Object.entries(formValues)
+            .filter(([, value]) => ['string', 'number'].includes(typeof value) && String(value).trim())
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('. ');
         
-        // שליפת ה-userId מתוך המידלוור של האימות (תומך ב-req.userId או req.user._id)
         const userId = req.userId || (req.user && req.user._id);
 
         if (!userId) {
@@ -217,7 +233,7 @@ const createRender = async (req, res) => {
 
         const newRender = await Render.create({
             userId,
-            promptText: text,
+            promptText: text || aiPrompt,
             uploadedImage,
             audioUrl,
             formDetails,
@@ -269,6 +285,7 @@ const getUserRenders = async (req, res) => {
         }
 
         const renders = await Render.find(filter)
+            .select('_id promptText formDetails summary items createdAt isSaved')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);

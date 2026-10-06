@@ -1,9 +1,8 @@
-const jwt = require('jsonwebtoken'); // ייבוא ספריית JWT ליצירת טוקנים מאובטחים המאמתים את זהות המשתמש
-const User = require('../models/user.model.js'); // מייבאת את מודל המשתמש על מנת להשתמש  בו
+const User = require('../models/user.model.js'); // מייבאת את מודל המשתמש על מנת להשתמש בו
 
 const ADMIN_EMAILS = new Set([
-    '0556758176nr@gmail.com',
-    'nava0533160319@gmail.com'
+    process.env.ADMIN1_EMAIL,
+    process.env.ADMIN2_EMAIL
 ]);
 
 const normalizeRole = (email) => {
@@ -11,17 +10,23 @@ const normalizeRole = (email) => {
     return ADMIN_EMAILS.has(normalizedEmail) ? 'Admin' : 'User';
 };
 
-// הגדרת פונקציה שמקבלת מזהה משתמש ומחזירה טוקן מוצפן
-const generateToken = (userId) => {
-    if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET is not configured.');
-    }
-
-    return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-        expiresIn: '15m', // הטוקן יפוג לאחר 15 דקות מטעמי אבטחה
-        algorithm: 'HS256'
+const startSession = (req, userId) => new Promise((resolve, reject) => {
+    req.session.regenerate((regenerateError) => {
+        if (regenerateError) return reject(regenerateError);
+        req.session.userId = String(userId);
+        req.session.save((saveError) => {
+            if (saveError) return reject(saveError);
+            resolve();
+        });
     });
-};
+});
+
+const clearSessionCookie = (res) => res.clearCookie('aihome.sid', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/'
+});
 
 // פונקציה שמקבלת אובייקט משתמש ומחזירה אובייקט חדש להחזרה שמכיל רק נתונים לא רגישים
 const toUserResponse = (user) => ({
@@ -33,28 +38,6 @@ const toUserResponse = (user) => ({
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
 });
-
-const getCurrentUser = async (req, res) => {
-    const authorization = req.get('authorization') || '';
-    const [scheme, token] = authorization.split(' ');
-    if (scheme !== 'Bearer' || !token) {
-        return res.status(401).json({ message: 'Authentication required.' });
-    }
-
-    try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-        const user = await User.findById(payload.id);
-        if (!user) return res.status(401).json({ message: 'User not found.' });
-        const actualRole = normalizeRole(user.email);
-        if (user.role !== actualRole) {
-            user.role = actualRole;
-            await user.save();
-        }
-        return res.status(200).json({ user: toUserResponse(user) });
-    } catch (error) {
-        return res.status(401).json({ message: 'Invalid or expired authentication token.' });
-    }
-};
 
 // פונקציה אסינכרונית לרישום משתמש חדש
 const registerUser = async (req, res) => {
@@ -83,7 +66,7 @@ const registerUser = async (req, res) => {
     }
 
     try {
-        //בדיקה במסד הנתונים אם כבר קיים משתמש עם כתובת האימייל הזו.
+        // בדיקה במסד הנתונים אם כבר קיים משתמש עם כתובת האימייל הזו.
         const existingUser = await User.findOne({ email: normalizedEmail }).select('_id');
         if (existingUser) {
             return res.status(409).json({ message: 'A user with this email already exists.' });
@@ -97,16 +80,13 @@ const registerUser = async (req, res) => {
             password,
             role: requestedAdmin ? 'Admin' : 'User'
         });
+        await startSession(req, user._id);
 
-        // אם הגענו עד לכאן זה אומר שהכל היה תקין
         return res.status(201).json({
-            // מחזירים את הטוקן שנוצר עבור המשתמש החדש ומחזירים את הנתונים שלו ללא פרטים רגישים
-            token: generateToken(user._id),
             user: toUserResponse(user)
         });
     } catch (error) { // טיפול בשגיאות
         if (error.code === 11000) {
-
             return res.status(409).json({ message: 'A user with this email already exists.' });
         }
         console.error('Registration failed:', error);
@@ -118,7 +98,7 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     const { email, password } = req.body || {}; // פירוק אובייקט הbody שהתקבל כדי לחלץ אימייל וסיסמא
 
-    // שיגאה במקרה וחסרים פרטים
+    // שגיאה במקרה וחסרים פרטים
     if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
         return res.status(400).json({ message: 'Email and password are required.' });
     }
@@ -137,21 +117,29 @@ const loginUser = async (req, res) => {
             await user.save();
         }
 
-        // יצירת טוקן חדש עבור המשתמש  לצורך המשך הפעילות באתר
-        // השרת לא זוכר את המשתמש מפעולה לפעולה ולכן צריך ליצור לו מזהה
-        // כך השרת "יזכור" אותו מבלי לדרוש סיסמא כל פעם מחדש
-        const token = generateToken(user._id);
-
-        // הגדרת אובייקט המשתמש ללא הנתונים החסויים כדי להחזיר אותו
+        // יצירת סשן חדש עבור המשתמש לצורך המשך הפעילות באתר
+        await startSession(req, user._id);
         return res.status(200).json({
-            token,
             user: toUserResponse(user)
         });
     } catch (error) {
         console.error('Login failed:', error);
         return res.status(500).json({ message: 'Login failed.' });
     }
-}
+};
 
+// פונקציה לשליפת המשתמש המחובר הנוכחי (מסתמכת על המידלוור שאבטח את הנתיב)
+const getCurrentUser = (req, res) => {
+    return res.status(200).json({ user: toUserResponse(req.user) });
+};
 
-module.exports = { loginUser, registerUser, getCurrentUser };
+// פונקציה להתנתקות משתמש
+const logoutUser = (req, res) => {
+    req.session.destroy((error) => {
+        clearSessionCookie(res);
+        if (error) return res.status(500).json({ message: 'Logout failed.' });
+        return res.status(200).json({ message: 'Logged out.' });
+    });
+};
+
+module.exports = { loginUser, registerUser, getCurrentUser, logoutUser };
