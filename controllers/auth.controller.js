@@ -1,4 +1,5 @@
-const User = require('../models/user.model.js'); // מייבאת את מודל המשתמש על מנת להשתמש בו
+const User = require('../models/user.model.js');
+const jwt = require('jsonwebtoken');
 
 const ADMIN_EMAILS = new Set([
     process.env.ADMIN1_EMAIL,
@@ -10,25 +11,11 @@ const normalizeRole = (email) => {
     return ADMIN_EMAILS.has(normalizedEmail) ? 'Admin' : 'User';
 };
 
-const startSession = (req, userId) => new Promise((resolve, reject) => {
-    req.session.regenerate((regenerateError) => {
-        if (regenerateError) return reject(regenerateError);
-        req.session.userId = String(userId);
-        req.session.save((saveError) => {
-            if (saveError) return reject(saveError);
-            resolve();
-        });
-    });
-});
+// יצירת טוקן JWT
+const generateToken = (userId) => {
+    return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
 
-const clearSessionCookie = (res) => res.clearCookie('aihome.sid', {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/'
-});
-
-// פונקציה שמקבלת אובייקט משתמש ומחזירה אובייקט חדש להחזרה שמכיל רק נתונים לא רגישים
 const toUserResponse = (user) => ({
     _id: user._id,
     name: user.name,
@@ -41,17 +28,15 @@ const toUserResponse = (user) => ({
 
 // פונקציה אסינכרונית לרישום משתמש חדש
 const registerUser = async (req, res) => {
-    const { name, phone, email, password, accountMode, adminCode } = req.body || {}; // חילוץ הנתונים מהבאדי
-    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''; // נירמול הנתונים שיהיו בתבנית אחידה
+    const { name, phone, email, password, accountMode, adminCode } = req.body || {};
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     const normalizedName = typeof name === 'string' ? name.trim() : '';
     const normalizedPhone = typeof phone === 'string' ? phone.trim() : '';
 
-    // זריקת שגיאה במקרה וחסר נתון
     if (!normalizedName || !normalizedPhone || !normalizedEmail || typeof password !== 'string' || !password) {
         return res.status(400).json({ message: 'Name, phone, email, and password are required.' });
     }
 
-    // בדיקת תקינות למייל מספר טלפון וסיסמא
     if (normalizedName.length > 100 || normalizedEmail.length > 254 || normalizedPhone.length > 20 || password.length < 8 || password.length > 128 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) || !/^\+?[\d\s().-]{7,20}$/.test(normalizedPhone)) {
         return res.status(400).json({ message: 'Name, phone, email, or password is invalid.' });
     }
@@ -66,13 +51,11 @@ const registerUser = async (req, res) => {
     }
 
     try {
-        // בדיקה במסד הנתונים אם כבר קיים משתמש עם כתובת האימייל הזו.
         const existingUser = await User.findOne({ email: normalizedEmail }).select('_id');
         if (existingUser) {
             return res.status(409).json({ message: 'A user with this email already exists.' });
         }
 
-        // יצירת משתמש חדש לשמירה במסד נתונים
         const user = await User.create({
             name: normalizedName,
             phone: normalizedPhone,
@@ -80,12 +63,14 @@ const registerUser = async (req, res) => {
             password,
             role: requestedAdmin ? 'Admin' : 'User'
         });
-        await startSession(req, user._id);
+
+        const token = generateToken(user._id);
 
         return res.status(201).json({
+            token,
             user: toUserResponse(user)
         });
-    } catch (error) { // טיפול בשגיאות
+    } catch (error) {
         if (error.code === 11000) {
             return res.status(409).json({ message: 'A user with this email already exists.' });
         }
@@ -96,17 +81,14 @@ const registerUser = async (req, res) => {
 
 // פונקציה אסינכרונית להתחברות לקוח
 const loginUser = async (req, res) => {
-    const { email, password } = req.body || {}; // פירוק אובייקט הbody שהתקבל כדי לחלץ אימייל וסיסמא
+    const { email, password } = req.body || {};
 
-    // שגיאה במקרה וחסרים פרטים
     if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
         return res.status(400).json({ message: 'Email and password are required.' });
     }
 
     try {  
-        // מנסים למצוא את המשתמש לפי כתובת המייל, מנקים רווחים והופכים לאותיות קטנות, שולפים גם את הסיסמא המוצפנת לצורך אימות
         const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password');
-        // אם המשתמש לא נמצא או שהסיסמא שגויה מוחזרת שגיאה
         if (!user || !(await user.comparePassword(password))) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
@@ -117,9 +99,10 @@ const loginUser = async (req, res) => {
             await user.save();
         }
 
-        // יצירת סשן חדש עבור המשתמש לצורך המשך הפעילות באתר
-        await startSession(req, user._id);
+        const token = generateToken(user._id);
+
         return res.status(200).json({
+            token,
             user: toUserResponse(user)
         });
     } catch (error) {
@@ -128,18 +111,33 @@ const loginUser = async (req, res) => {
     }
 };
 
-// פונקציה לשליפת המשתמש המחובר הנוכחי (מסתמכת על המידלוור שאבטח את הנתיב)
-const getCurrentUser = (req, res) => {
-    return res.status(200).json({ user: toUserResponse(req.user) });
+// שליפת המשתמש הנוכחי באמצעות טוקן מההדר (Header)
+const getCurrentUser = async (req, res) => {
+    const authorization = req.get('authorization') || '';
+    const [scheme, token] = authorization.split(' ');
+    if (scheme !== 'Bearer' || !token) {
+        return res.status(401).json({ message: 'Authentication required.' });
+    }
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+        const user = await User.findById(payload.id);
+        if (!user) return res.status(401).json({ message: 'User not found.' });
+
+        const actualRole = normalizeRole(user.email);
+        if (user.role !== actualRole) {
+            user.role = actualRole;
+            await user.save();
+        }
+        return res.status(200).json({ user: toUserResponse(user) });
+    } catch (error) {
+        return res.status(401).json({ message: 'Invalid or expired authentication token.' });
+    }
 };
 
-// פונקציה להתנתקות משתמש
 const logoutUser = (req, res) => {
-    req.session.destroy((error) => {
-        clearSessionCookie(res);
-        if (error) return res.status(500).json({ message: 'Logout failed.' });
-        return res.status(200).json({ message: 'Logged out.' });
-    });
+    // בשיטת JWT ההתנתקות מתבצעת בצד לקוח על ידי מחיקת הטוקן
+    return res.status(200).json({ message: 'Logged out.' });
 };
 
 module.exports = { loginUser, registerUser, getCurrentUser, logoutUser };
