@@ -1,0 +1,209 @@
+[2026-10-06T19:58:50.678Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T19:58:51.654Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T19:58:51.843Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T19:58:52.013Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T19:58:52.178Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T19:58:52.346Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T19:58:52.570Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:01:26.457Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:03:19.019Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:03:20.879Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:11:38.202Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:11:39.030Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:11:39.250Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:16:14.163Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:16:14.993Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:16:15.161Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:16:15.336Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:16:15.488Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-06T20:16:15.718Z] POST /api/upload-and-process - Error: Origin is not allowed by CORS.
+    at origin (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\server.js:29:21)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:219:13
+    at optionsCallback (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:199:9)
+    at corsMiddleware (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:204:7)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)

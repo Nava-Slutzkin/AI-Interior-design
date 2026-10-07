@@ -107,6 +107,60 @@ const parseAiResponse = (content) => {
     throw new Error('AI response was not a valid object.');
 };
 
+const parseEstimatedPrice = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) return value;
+    if (typeof value !== 'string') return null;
+
+    const normalized = value.trim().replace(/,/g, '').match(/\d+(?:\.\d+)?/);
+    if (!normalized) return null;
+
+    const price = Number(normalized[0]);
+    return Number.isFinite(price) && price >= 0 ? price : null;
+};
+
+const estimateItemPrice = (name) => {
+    const priceBands = [
+        [/ספה|כורס/, 2600],
+        [/מיטה|מזרן/, 2800],
+        [/ארון|מזנון|ספריה|ספרייה/, 1900],
+        [/שולחן|אי למטבח/, 1250],
+        [/כיסא|כורסה/, 650],
+        [/מנורה|תאורה|גוף תאורה/, 520],
+        [/שטיח/, 850],
+        [/וילון/, 600],
+        [/שידה|מדף/, 750],
+        [/מקרר|תנור|מדיח|כיריים/, 2400]
+    ];
+    return priceBands.find(([pattern]) => pattern.test(name))?.[1] || 700;
+};
+
+const normalizeDesignItems = (items, budget) => {
+    const normalizedItems = items.slice(0, 5).map((item) => {
+        const name = String(item.name || 'פריט עיצוב');
+        const parsedPrice = parseEstimatedPrice(item.price ?? item.estimatedPrice ?? item.cost);
+        return {
+            name,
+            price: parsedPrice && parsedPrice > 0 ? parsedPrice : estimateItemPrice(name),
+            link: `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(name)}`
+        };
+    });
+
+    const total = normalizedItems.reduce((sum, item) => sum + item.price, 0);
+    const maxBudget = Number(budget);
+    if (Number.isFinite(maxBudget) && maxBudget > 0 && total > maxBudget) {
+        let remaining = maxBudget;
+        normalizedItems.forEach((item, index) => {
+            const proportional = index === normalizedItems.length - 1
+                ? remaining
+                : Math.max(1, Math.floor((item.price / total) * maxBudget));
+            item.price = proportional;
+            remaining -= proportional;
+        });
+    }
+
+    return normalizedItems;
+};
+
 const buildAiDesignPayload = async (aiPrompt) => {
     if (!aiApiKey) throw new Error('AI_PROVIDER_NOT_CONFIGURED');
 
@@ -134,11 +188,6 @@ Each item must include "name" (specific item in Hebrew) and "price" (realistic e
         if (!Array.isArray(parsed.items) || !parsed.items.length || typeof parsed.summary !== 'string') {
             throw new Error('AI returned an incomplete design.');
         }
-        parsed.items = parsed.items.slice(0, 5).map((item) => ({
-            name: String(item.name || 'פריט עיצוב'),
-            price: Math.max(0, Number(item.price) || 0),
-            link: `[https://www.google.com/search?tbm=shop&q=$](https://www.google.com/search?tbm=shop&q=$){encodeURIComponent(String(item.name || 'עיצוב פנים'))}`
-        }));
         return parsed;
     } catch (err) {
         console.error('OpenAI/OpenRouter call failed:', err.message);
@@ -220,7 +269,7 @@ const createRender = async (req, res) => {
         }
 
         const aiData = await buildAiDesignPayload(aiPrompt || 'צור הצעת עיצוב פנים מודרנית ומזמינה.');
-        const generatedItems = Array.isArray(aiData.items) ? aiData.items.slice(0, 5) : [];
+        const generatedItems = normalizeDesignItems(aiData.items, formDetails.budget);
 
         let generatedImageUrl = null;
         try {
