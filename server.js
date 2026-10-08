@@ -4,9 +4,9 @@ require('dotenv').config();
 // מייבא את הספריות הנדרשות לשרת
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
 const session = require('express-session');
 const { MongoStore } = require('connect-mongo');
+const mongoose = require('mongoose');
 const authRoutes = require('./routers/auth.router.js'); //מייבאת את הנתונים מהקובץ הזה
 const renderRoutes = require('./routers/render.router.js'); // ייבוא נתיבי ההדמיות.
 const adminRoutes = require('./routers/admin.router.js');
@@ -42,6 +42,7 @@ app.use(session({
     mongoUrl: process.env.MONGODB_URI,
     collectionName: 'sessions',
     ttl: 60 * 60 * 24 * 7
+
   }),
   cookie: {
     httpOnly: true,
