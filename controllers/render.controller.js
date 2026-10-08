@@ -66,7 +66,7 @@ const aiApiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
 const aiBaseUrl = process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1';
 const aiModel = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
 const imageApiToken = process.env.HF_API_TOKEN;
-const imageModel = process.env.HF_IMAGE_MODEL || 'stabilityai/stable-diffusion-3-medium-diffusers';
+const imageModel = process.env.HF_IMAGE_MODEL || process.env.IMAGE_MODEL || 'stabilityai/stable-diffusion-3-medium-diffusers';
 
 const openai = new OpenAI({
     apiKey: aiApiKey || 'missing_api_key',
@@ -198,7 +198,8 @@ Each item must include "name" (specific item in Hebrew) and "price" (realistic e
 const generateRoomImage = async (prompt) => {
     if (!imageApiToken) return null;
 
-    const response = await fetch(`[https://router.huggingface.co/hf-inference/models/$](https://router.huggingface.co/hf-inference/models/$){imageModel}`, {
+    const modelUrl = `https://router.huggingface.co/hf-inference/models/${encodeURIComponent(imageModel)}`;
+    const response = await fetch(modelUrl, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${imageApiToken}`,
