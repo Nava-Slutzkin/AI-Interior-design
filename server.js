@@ -32,7 +32,7 @@ app.use(cors({
 }));
 
 // מאפשר לקבל ולעבד בקשות JSON
-app.use(express.json());
+app.use(express.json({ limit: '16mb' }));
 app.use(session({
   name: 'aihome.sid',
   secret: process.env.JWT_SECRET,
@@ -59,7 +59,11 @@ app.get('/', (req, res) => {
 });
 
 // הגדרת Middleware לחסימת גישה לפי לוח זמנים
-app.use(createScheduleBlocker([6], { message: 'האתר סגור כעת' }));
+app.use(createScheduleBlocker([6], {
+  message: 'האתר סגור כעת',
+  timeZone: 'Asia/Jerusalem',
+  saturdayReopenHour: 19
+}));
 
 // מאפשר לקבל בקשות URL-encoded, לדוגמה טפסים רגילים
 app.use(express.urlencoded({ extended: true }));

@@ -7,11 +7,23 @@ const path = require('path');
  */
 const createScheduleBlocker = (blockedDays = [6], options = {}) => {
   return (req, res, next) => {
-    // קבלת היום הנוכחי בשבוע (0-6)
-    const currentDay = new Date().getDay();
-    
-    // בדיקה האם היום הנוכחי מוכל ברשימת הימים החסומים
-    if (blockedDays.includes(currentDay)) {
+    const now = new Date();
+    const timeZone = options.timeZone || 'Asia/Jerusalem';
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(now);
+    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+    const dayByName = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const currentDay = dayByName[values.weekday];
+    const currentMinutes = Number(values.hour) * 60 + Number(values.minute);
+    const reopenMinutes = Number(options.saturdayReopenHour ?? 24) * 60 + Number(options.saturdayReopenMinute ?? 0);
+    const isWithinSaturdayClosure = currentDay === 6 && currentMinutes < reopenMinutes;
+
+    if (blockedDays.includes(currentDay) && (currentDay !== 6 || isWithinSaturdayClosure)) {
       return res.status(503).json({
         status: 'error',
         message: options.message || 'האתר אינו פעיל כעת לפי לוח הזמנים המוגדר.'

@@ -207,3 +207,25 @@
     at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
     at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
     at Function.handle (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:186:3)
+[2026-10-08T21:59:02.044Z] POST /api/renders - PayloadTooLargeError: request entity too large
+    at readStream (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\raw-body\index.js:163:17)
+    at getRawBody (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\raw-body\index.js:116:12)
+    at read (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\body-parser\lib\read.js:113:3)
+    at jsonParser (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\body-parser\lib\types\json.js:60:5)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at cors (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:188:7)
+[2026-10-08T21:59:11.298Z] POST /api/renders - PayloadTooLargeError: request entity too large
+    at readStream (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\raw-body\index.js:163:17)
+    at getRawBody (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\raw-body\index.js:116:12)
+    at read (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\body-parser\lib\read.js:113:3)
+    at jsonParser (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\body-parser\lib\types\json.js:60:5)
+    at Layer.handleRequest (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:342:13)
+    at C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:297:9
+    at processParams (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:582:12)
+    at next (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\router\index.js:291:5)
+    at cors (C:\Users\משפחת דביר\OneDrive\Documents\node\פרויקט גמר\node_modules\cors\lib\index.js:188:7)

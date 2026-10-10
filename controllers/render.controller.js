@@ -65,6 +65,7 @@ const deleteRender = async (req, res) => {
 const aiApiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
 const aiBaseUrl = process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1';
 const aiModel = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+const aiMultimodalModel = process.env.AI_MULTIMODAL_MODEL || 'google/gemini-2.5-flash';
 const imageApiToken = process.env.HF_API_TOKEN;
 const imageModel = process.env.HF_IMAGE_MODEL || process.env.IMAGE_MODEL || 'stabilityai/stable-diffusion-3-medium-diffusers';
 
@@ -161,12 +162,30 @@ const normalizeDesignItems = (items, budget) => {
     return normalizedItems;
 };
 
-const buildAiDesignPayload = async (aiPrompt) => {
+const buildAiDesignPayload = async (aiPrompt, attachments = []) => {
     if (!aiApiKey) throw new Error('AI_PROVIDER_NOT_CONFIGURED');
 
     try {
+        const messageContent = [{ type: 'text', text: aiPrompt }];
+        attachments.forEach((attachment) => {
+            if (attachment.type === 'image') {
+                messageContent.push({
+                    type: 'image_url',
+                    image_url: { url: attachment.dataUrl }
+                });
+            } else if (attachment.type === 'audio') {
+                messageContent.push({
+                    type: 'input_audio',
+                    input_audio: {
+                        data: attachment.base64,
+                        format: attachment.format
+                    }
+                });
+            }
+        });
+
         const chatResponse = await openai.chat.completions.create({
-            model: aiModel,
+            model: attachments.length ? aiMultimodalModel : aiModel,
             messages: [
                 {
                     role: 'system',
@@ -177,7 +196,7 @@ Each item must include "name" (specific item in Hebrew) and "price" (realistic e
                 },
                 {
                     role: 'user',
-                    content: aiPrompt
+                    content: messageContent
                 }
             ],
             response_format: { type: 'json_object' },
@@ -262,6 +281,34 @@ const createRender = async (req, res) => {
             return res.status(503).json({ message: 'שירות ה־AI עדיין לא הוגדר. הוסיפו מפתח ספק AI לקובץ .env של השרת.' });
         }
 
+        const attachments = [];
+        const addAttachment = (value, expectedType) => {
+            if (!value) return;
+            if (typeof value !== 'string' || value.length > 14 * 1024 * 1024) {
+                throw Object.assign(new Error('קובץ שצורף אינו תקין או גדול מדי (מקסימום 10MB).'), { status: 400 });
+            }
+
+            const match = value.match(/^data:(image\/(?:jpeg|png|webp|gif)|audio\/(?:wav|x-wav));base64,([A-Za-z0-9+/]+={0,2})$/i);
+            if (!match || !match[1].toLowerCase().startsWith(`${expectedType}/`)) {
+                throw Object.assign(new Error(`סוג קובץ ${expectedType === 'image' ? 'התמונה' : 'השמע'} אינו נתמך.`), { status: 400 });
+            }
+            const base64 = match[2];
+            const size = Buffer.from(base64, 'base64').length;
+            if (!size || size > 10 * 1024 * 1024) {
+                throw Object.assign(new Error('גודל כל קובץ חייב להיות עד 10MB.'), { status: 400 });
+            }
+
+            attachments.push({
+                type: expectedType,
+                dataUrl: value,
+                base64,
+                format: 'wav'
+            });
+        };
+
+        addAttachment(uploadedImage, 'image');
+        addAttachment(audioUrl, 'audio');
+
         let aiPrompt = text ? `${text}. ` : '';
         if (formDetails) {
             aiPrompt += `Room type: ${formDetails.roomType || 'any'}. `;
@@ -269,7 +316,14 @@ const createRender = async (req, res) => {
             if (formDetails.budget) aiPrompt += `Budget: ${formDetails.budget} ILS. `;
         }
 
-        const aiData = await buildAiDesignPayload(aiPrompt || 'צור הצעת עיצוב פנים מודרנית ומזמינה.');
+        if (attachments.some((attachment) => attachment.type === 'audio')) {
+            aiPrompt += ' התייחסו גם להעדפות ולבקשות שנאמרו בהקלטת השמע.';
+        }
+        if (attachments.some((attachment) => attachment.type === 'image')) {
+            aiPrompt += ' התייחסו לתמונה המצורפת כהשראה למצב הקיים ולסגנון המבוקש.';
+        }
+
+        const aiData = await buildAiDesignPayload(aiPrompt || 'צור הצעת עיצוב פנים מודרנית ומזמינה.', attachments);
         const generatedItems = normalizeDesignItems(aiData.items, formDetails.budget);
 
         let generatedImageUrl = null;
@@ -284,8 +338,12 @@ const createRender = async (req, res) => {
         const newRender = await Render.create({
             userId,
             promptText: text || aiPrompt,
-            uploadedImage,
-            audioUrl,
+            uploadedImage: (uploadedImage?.length || 0) + (audioUrl?.length || 0) + (generatedImageUrl?.length || 0) <= 14 * 1024 * 1024
+                ? uploadedImage
+                : undefined,
+            audioUrl: (uploadedImage?.length || 0) + (audioUrl?.length || 0) + (generatedImageUrl?.length || 0) <= 14 * 1024 * 1024
+                ? audioUrl
+                : undefined,
             formDetails,
             resultImage: generatedImageUrl || '',
             items: generatedItems,
@@ -304,8 +362,8 @@ const createRender = async (req, res) => {
         if (error.message === 'AI_PROVIDER_UNAVAILABLE') {
             return res.status(503).json({ message: 'שירות ה־AI אינו זמין כרגע. נסו שוב בעוד כמה דקות.' });
         }
-        return res.status(500).json({
-            message: 'נכשל ביצירת ההדמיה מול ה-AI.',
+        return res.status(error.status || 500).json({
+            message: error.status === 400 ? error.message : 'נכשל ביצירת ההדמיה מול ה-AI.',
             error: error.message
         });
     }
