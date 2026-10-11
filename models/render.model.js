@@ -47,19 +47,23 @@ const renderSchema = new mongoose.Schema(
       dimensions: { type: String, trim: true } // מידות החדר
     },
 
-    // --- תוצאות ה-AI (דף תוצאה) ---
+    // --- תוצאות ההדמיה (דף תוצאה) ---
     resultImage: {
       type: String,
-      default: '' // תמונה עשויה להיות לא זמינה במסלול החינמי
+        default: ''
+    },
+    resultImages: {
+      type: [String],
+      default: []
+    },
+    imageHasMore: {
+      type: Boolean,
+      default: false
     },
     summary: {
       type: String,
       trim: true,
       default: ''
-    },
-    imageGenerated: {
-      type: Boolean,
-      default: false
     },
     items: [itemSchema], // רשימת הרהיטים והאקססוריז (ניתן להוסיף/למחוק/לעדכן)
 

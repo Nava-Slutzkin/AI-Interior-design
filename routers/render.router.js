@@ -6,6 +6,7 @@ const {
     createRender, 
     getUserRenders, 
     getRenderById, 
+    getRoomImages,
     updateRender, 
     deleteRender 
 } = require('../controllers/render.controller');
@@ -16,6 +17,8 @@ const requireAuth = require('../middlewares/auth.middleware');
 // 3. הגדרת הנתיבים המוגנים
 router.post('/', requireAuth, createRender);
 router.get('/', requireAuth, getUserRenders);
+router.get('/images', requireAuth, getRoomImages);
+router.post('/images', requireAuth, getRoomImages);
 router.get('/:id', requireAuth, getRenderById);
 router.put('/:id', requireAuth, updateRender);
 router.delete('/:id', requireAuth, deleteRender);

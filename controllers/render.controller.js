@@ -1,6 +1,79 @@
 const Render = require('../models/render.model');
 const { OpenAI } = require('openai');
 const mongoose = require('mongoose');
+const fs = require('fs/promises');
+const path = require('path');
+const { randomInt } = require('crypto');
+
+const roomImagesDirectory = process.env.ROOM_IMAGES_DIR || path.join(__dirname, '..', 'public', 'room-images');
+const supportedImageExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+
+const getRoomFolderName = (roomType) => String(roomType || '')
+    .normalize('NFKC')
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-')
+    .replace(/\.{2,}/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+
+const selectRoomImages = async (roomType, excluded = [], count = 3) => {
+    const folderName = getRoomFolderName(roomType);
+    if (!folderName) return { images: [], hasMore: false };
+
+    const roomDirectory = path.resolve(roomImagesDirectory, folderName);
+    if (!roomDirectory.startsWith(`${path.resolve(roomImagesDirectory)}${path.sep}`)) {
+        return { images: [], hasMore: false };
+    }
+
+    let files;
+    try {
+        files = await fs.readdir(roomDirectory, { withFileTypes: true });
+    } catch (error) {
+        if (error.code === 'ENOENT') return { images: [], hasMore: false };
+        throw error;
+    }
+
+    const excludedNames = new Set(excluded);
+    const candidates = files
+        .filter((file) => file.isFile() && supportedImageExtensions.has(path.extname(file.name).toLowerCase()))
+        .map((file) => file.name)
+        .filter((name) => !excludedNames.has(name));
+
+    for (let index = candidates.length - 1; index > 0; index -= 1) {
+        const swapIndex = randomInt(index + 1);
+        [candidates[index], candidates[swapIndex]] = [candidates[swapIndex], candidates[index]];
+    }
+
+    return {
+        images: candidates.slice(0, count).map((name) => ({
+            name,
+            url: `/room-images/${encodeURIComponent(folderName)}/${encodeURIComponent(name)}`
+        })),
+        hasMore: candidates.length > count
+    };
+};
+
+const getRoomImages = async (req, res) => {
+    try {
+        const submittedRoomType = req.body?.roomType ?? req.query.roomType;
+        const roomType = typeof submittedRoomType === 'string' ? submittedRoomType.trim() : '';
+        if (!roomType) return res.status(400).json({ message: 'Room type is required.' });
+
+        const submittedExcluded = req.body?.exclude ?? req.query.exclude;
+        const excluded = Array.isArray(submittedExcluded)
+            ? submittedExcluded.filter((name) => typeof name === 'string')
+            : (typeof submittedExcluded === 'string' ? [submittedExcluded] : []);
+        const { images, hasMore } = await selectRoomImages(roomType, excluded);
+
+        return res.status(200).json({
+            images,
+            hasMore
+        });
+    } catch (error) {
+        console.error('Error fetching room images:', error);
+        return res.status(500).json({ message: 'Failed to fetch room images.' });
+    }
+};
 
 // 1. פונקציה לעדכון רשומת Render לפי מזהה
 const updateRender = async (req, res) => {
@@ -66,9 +139,6 @@ const aiApiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
 const aiBaseUrl = process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1';
 const aiModel = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
 const aiMultimodalModel = process.env.AI_MULTIMODAL_MODEL || 'google/gemini-2.5-flash';
-const imageApiToken = process.env.HF_API_TOKEN;
-const imageModel = process.env.HF_IMAGE_MODEL || process.env.IMAGE_MODEL || 'stabilityai/stable-diffusion-3-medium-diffusers';
-
 const openai = new OpenAI({
     apiKey: aiApiKey || 'missing_api_key',
     baseURL: aiBaseUrl,
@@ -214,43 +284,7 @@ Each item must include "name" (specific item in Hebrew) and "price" (realistic e
     }
 };
 
-const generateRoomImage = async (prompt) => {
-    if (!imageApiToken) return null;
-
-    const modelUrl = `https://router.huggingface.co/hf-inference/models/${encodeURIComponent(imageModel)}`;
-    const response = await fetch(modelUrl, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${imageApiToken}`,
-            'Content-Type': 'application/json',
-            Accept: 'image/*'
-        },
-        body: JSON.stringify({
-            inputs: prompt,
-            parameters: {
-                negative_prompt: 'text, watermark, logo, blurry, distorted furniture',
-                width: 1024,
-                height: 768
-            }
-        }),
-        signal: AbortSignal.timeout(90000)
-    });
-
-    if (!response.ok) {
-        const providerMessage = await response.text();
-        console.warn('Image inference failed:', response.status, providerMessage.slice(0, 300));
-        return null;
-    }
-
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.startsWith('image/')) return null;
-
-    const image = Buffer.from(await response.arrayBuffer());
-    if (!image.length || image.length > 8 * 1024 * 1024) return null;
-    return `data:${contentType};base64,${image.toString('base64')}`;
-};
-
-// 3. יצירת הדמיה חדשה בעזרת AI
+// 3. יצירת הצעת עיצוב ושליפת תמונות מהמאגר המקומי
 const createRender = async (req, res) => {
     try {
         const body = req.body || {};
@@ -326,35 +360,30 @@ const createRender = async (req, res) => {
         const aiData = await buildAiDesignPayload(aiPrompt || 'צור הצעת עיצוב פנים מודרנית ומזמינה.', attachments);
         const generatedItems = normalizeDesignItems(aiData.items, formDetails.budget);
 
-        let generatedImageUrl = null;
-        try {
-            generatedImageUrl = await generateRoomImage(
-                `Photorealistic interior design visualization of ${aiPrompt}. Realistic furniture scale, coherent architecture, warm natural daylight, editorial interior photography, no text, no watermark.`
-            );
-        } catch (imageError) {
-            console.warn('Image inference unavailable:', imageError.message);
-        }
+        const { images: roomImages, hasMore } = await selectRoomImages(formDetails.roomType);
 
         const newRender = await Render.create({
             userId,
             promptText: text || aiPrompt,
-            uploadedImage: (uploadedImage?.length || 0) + (audioUrl?.length || 0) + (generatedImageUrl?.length || 0) <= 14 * 1024 * 1024
+            uploadedImage: (uploadedImage?.length || 0) + (audioUrl?.length || 0) <= 14 * 1024 * 1024
                 ? uploadedImage
                 : undefined,
-            audioUrl: (uploadedImage?.length || 0) + (audioUrl?.length || 0) + (generatedImageUrl?.length || 0) <= 14 * 1024 * 1024
+            audioUrl: (uploadedImage?.length || 0) + (audioUrl?.length || 0) <= 14 * 1024 * 1024
                 ? audioUrl
                 : undefined,
             formDetails,
-            resultImage: generatedImageUrl || '',
+            resultImage: roomImages[0]?.url || '',
+            resultImages: roomImages.map((image) => image.url),
+            imageHasMore: hasMore,
             items: generatedItems,
-            summary: aiData.summary || '',
-            imageGenerated: Boolean(generatedImageUrl)
+            summary: aiData.summary || ''
         });
 
         return res.status(201).json({
             id: newRender._id,
-            imageGenerated: newRender.imageGenerated,
-            source: 'AI-generated'
+            images: roomImages,
+            hasMore,
+            source: 'room-library'
         });
 
     } catch (error) {
@@ -424,12 +453,20 @@ const getRenderById = async (req, res) => {
             return res.status(404).json({ message: 'Render not found.' });
         }
 
+        const imageUrls = render.resultImages?.length
+            ? render.resultImages
+            : (render.resultImage?.startsWith('/room-images/') ? [render.resultImage] : []);
+
         return res.status(200).json({
             id: render._id,
-            resultImage: render.resultImage,
+            resultImage: imageUrls[0] || '',
+            images: imageUrls.map((url) => ({
+                url,
+                name: path.basename(decodeURIComponent(url))
+            })),
+            hasMoreImages: Boolean(render.imageHasMore),
             items: render.items,
             summary: render.summary,
-            imageGenerated: render.imageGenerated,
             promptText: render.promptText,
             formDetails: render.formDetails,
             createdAt: render.createdAt
@@ -444,6 +481,7 @@ module.exports = {
     createRender, 
     getUserRenders, 
     getRenderById, 
+    getRoomImages,
     updateRender, 
     deleteRender 
 };

@@ -3,6 +3,7 @@ require('dotenv').config();
 
 // מייבא את הספריות הנדרשות לשרת
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const session = require('express-session');
 const { MongoStore } = require('connect-mongo');
@@ -30,6 +31,11 @@ app.use(cors({
   },
   credentials: true
 }));
+
+app.use('/room-images', express.static(
+  process.env.ROOM_IMAGES_DIR || path.join(__dirname, 'public', 'room-images'),
+  { fallthrough: false, index: false }
+));
 
 // מאפשר לקבל ולעבד בקשות JSON
 app.use(express.json({ limit: '16mb' }));
