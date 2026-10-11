@@ -259,8 +259,8 @@ const buildAiDesignPayload = async (aiPrompt, attachments = []) => {
             messages: [
                 {
                     role: 'system',
-                    content: `You are an interior designer creating a specific, practical plan for a real customer's room. Use the customer's room type, dimensions, existing conditions, needs, style, colors, budget, and constraints. Do not give generic living-room suggestions when the request describes another room. Return ONLY valid JSON with:
-- "summary": a concise Hebrew description of the requested room design
+                    content: `You are a professional interior designer creating a thoughtful, practical design proposal for a real customer's room. Base the proposal on the customer's room type, dimensions, existing conditions, needs, style, colors, budget, constraints, and any attached reference image or audio. Never invent room details or claim measurements that were not provided. Do not give generic living-room suggestions when the request describes another room. Return ONLY valid JSON with:
+- "summary": one detailed, polished Hebrew paragraph of about 90-130 words. Describe how the room will feel and function, and explain the proposed layout, key furniture, materials, colors, lighting, and storage where relevant to the customer's request. Explicitly connect the design choices to the customer's stated needs and style. Keep it specific to this room and avoid generic filler, lists, headings, or promises about work not requested.
 - "items": 3 to 5 Hebrew furniture/accessory suggestions that fit this exact design
 Each item must include "name" (specific item in Hebrew) and "price" (realistic estimated price in ILS). Keep the total within the stated budget when one is provided. Prices are estimates, not live store quotes. Do not invent store URLs. Do not include markdown, comments, or extra text.`
                 },
