@@ -19,9 +19,12 @@ const {createScheduleBlocker,createIpBlocker,createErrorLogger} = require('./mid
 const app = express();
 
 // מאפשר בקשות מכל   דומיין/פורט לשרת
+// מאפשר בקשות מהדומיין של האתר ב-Render ומהסביבה המקומית
 const allowedOrigins = new Set([
   'http://localhost:5500',
   'http://127.0.0.1:5500',
+  'http://localhost:1000',
+  'https://ai-home-design.onrender.com', // הוספת הדומיין של האתר הסטטי
   ...(process.env.CLIENT_ORIGINS || '').split(',').map((origin) => origin.trim()).filter(Boolean)
 ]);
 
