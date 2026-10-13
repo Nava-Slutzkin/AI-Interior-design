@@ -1,3 +1,4 @@
+
 // טוען משתני סביבה מקובץ .env, כמו PORT ו-MONGODB_URI
 require('dotenv').config();
 
@@ -81,14 +82,15 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);// במקרה והכתובת מתחילה במה שכתוב פה, השרת ילך לקובץ המוגדר
 
 
-//  חיבור לוגר השגיאות - בסוף כל הראוטרים!
+// חיבור לוגר השגיאות - בסוף כל הראוטרים!
 app.use(createErrorLogger({
   logFilePath: './error.log'
 }));
 
-const PORT = process.env.PORT || 1000; // הגדרת הכתובת שעליה ירוץ האתר והוספת ערך ברירת מחדל
+// הגדרת הפורט לשרת (תמיכה בפורט דינמי של Render או ברירת מחדל 1000)
+const PORT = process.env.PORT || 1000;
 
-// חיבור הדטאבייס
+// חיבור הדטאבייס והפעלת השרת
 const startServer = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
