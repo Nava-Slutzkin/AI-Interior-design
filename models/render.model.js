@@ -65,6 +65,11 @@ const renderSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    estimatedBudget: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
     items: [itemSchema], // רשימת הרהיטים והאקססוריז (ניתן להוסיף/למחוק/לעדכן)
 
     // --- מצב שמירה וניהול ---

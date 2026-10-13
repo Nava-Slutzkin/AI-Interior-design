@@ -97,11 +97,13 @@ const updateRender = async (req, res) => {
         }
 
         render.items = items;
+        render.estimatedBudget = calculateEstimatedBudget(items);
         await render.save();
 
         return res.status(200).json({
             id: render._id,
-            items: render.items
+            items: render.items,
+            estimatedBudget: render.estimatedBudget
         });
     } catch (error) {
         return res.status(500).json({ message: 'שגיאת שרת בעדכון ההדמיה', error: error.message });
@@ -137,7 +139,7 @@ const deleteRender = async (req, res) => {
 // הגדרת החיבור ל-AI
 const aiApiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
 const aiBaseUrl = process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1';
-const aiModel = process.env.AI_MODEL || 'google/gemini-2.0-flash-exp:free';
+const aiModel = process.env.AI_MODEL || 'google/gemini-2.5-flash';
 const aiMultimodalModel = process.env.AI_MULTIMODAL_MODEL || 'google/gemini-2.5-flash';
 const openai = new OpenAI({
     apiKey: aiApiKey || 'missing_api_key',
@@ -231,6 +233,8 @@ const normalizeDesignItems = (items, budget) => {
 
     return normalizedItems;
 };
+
+const calculateEstimatedBudget = (items) => items.reduce((total, item) => total + item.price, 0);
 
 const buildAiDesignPayload = async (aiPrompt, attachments = []) => {
     if (!aiApiKey) throw new Error('AI_PROVIDER_NOT_CONFIGURED');
@@ -359,6 +363,7 @@ const createRender = async (req, res) => {
 
         const aiData = await buildAiDesignPayload(aiPrompt || 'צור הצעת עיצוב פנים מודרנית ומזמינה.', attachments);
         const generatedItems = normalizeDesignItems(aiData.items, formDetails.budget);
+        const estimatedBudget = calculateEstimatedBudget(generatedItems);
 
         const { images: roomImages, hasMore } = await selectRoomImages(formDetails.roomType);
 
@@ -376,6 +381,7 @@ const createRender = async (req, res) => {
             resultImages: roomImages.map((image) => image.url),
             imageHasMore: hasMore,
             items: generatedItems,
+            estimatedBudget,
             summary: aiData.summary || ''
         });
 
@@ -422,7 +428,7 @@ const getUserRenders = async (req, res) => {
         }
 
         const renders = await Render.find(filter)
-            .select('_id promptText formDetails summary items createdAt isSaved')
+            .select('_id promptText formDetails summary items estimatedBudget createdAt isSaved')
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);
@@ -466,6 +472,7 @@ const getRenderById = async (req, res) => {
             })),
             hasMoreImages: Boolean(render.imageHasMore),
             items: render.items,
+            estimatedBudget: render.estimatedBudget || calculateEstimatedBudget(render.items),
             summary: render.summary,
             promptText: render.promptText,
             formDetails: render.formDetails,

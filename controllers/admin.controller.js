@@ -188,11 +188,12 @@ exports.getAllRenders = async (req, res) => {
             return res.status(403).json({ message: 'אין לך הרשאה לצפות בהדמיות.' });
         }
         const renders = await Render.find()
-            .select('_id userId formDetails promptText summary createdAt')
+            .select('_id userId formDetails promptText summary items estimatedBudget createdAt')
             .populate('userId', 'name email')
             .sort({ createdAt: -1 });
         return res.status(200).json(renders.map((render) => ({
             ...render.toObject(),
+            estimatedBudget: Number(render.estimatedBudget || render.items?.reduce((sum, item) => sum + Number(item.price || 0), 0) || 0),
             ownerName: render.userId?.name || render.userId?.email || 'לא ידוע',
             userId: render.userId?._id || render.userId
         })));
