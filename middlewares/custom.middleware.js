@@ -1,5 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  *  Middleware Creator: חסימת גישה לפי ימים בשבוע (Schedule Blocker)
@@ -89,7 +92,7 @@ const createErrorLogger = (options = {}) => {
 };
 
 
-module.exports = {
+export {
   createScheduleBlocker,
   createIpBlocker,
   createErrorLogger

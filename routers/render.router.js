@@ -1,18 +1,18 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
 
 // 1. ייבוא מרכזי של כל הפונקציות מה-Controller
-const { 
+import {
     createRender, 
     getUserRenders, 
     getRenderById, 
     getRoomImages,
     updateRender, 
     deleteRender 
-} = require('../controllers/render.controller');
+} from '../controllers/render.controller.js';
 
 // 2. ייבוא ה-Middleware לאימות המשתמש
-const requireAuth = require('../middlewares/auth.middleware');
+import { requireAuth } from '../middlewares/auth.middleware.js';
 
 // 3. הגדרת הנתיבים המוגנים
 router.post('/', requireAuth, createRender);
@@ -23,4 +23,4 @@ router.get('/:id', requireAuth, getRenderById);
 router.put('/:id', requireAuth, updateRender);
 router.delete('/:id', requireAuth, deleteRender);
 
-module.exports = router;
+export default router;

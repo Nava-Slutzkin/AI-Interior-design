@@ -1,5 +1,5 @@
 // מייבא את Mongoose כדי להגדיר את הסכמה למסד הנתונים
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // סכמה פנימית עבור פריט ברשימת הקניות (רהיטים/אקססוריז)
 const itemSchema = new mongoose.Schema({
@@ -90,4 +90,4 @@ renderSchema.index({ userId: 1, createdAt: -1 });
 
 const Render = mongoose.model('Render', renderSchema);
 
-module.exports = Render;
+export default Render;

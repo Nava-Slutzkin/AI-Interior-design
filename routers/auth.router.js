@@ -1,6 +1,6 @@
-const express = require('express');
-const { loginUser, registerUser, getCurrentUser, logoutUser } = require('../controllers/auth.controller.js');
-const requireAuth = require('../middlewares/auth.middleware');
+import express from 'express';
+import { loginUser, registerUser, getCurrentUser, logoutUser } from '../controllers/auth.controller.js';
+import { requireAuth } from '../middlewares/auth.middleware.js';
 
 const router = express.Router(); // יוצרת רכיב Router חדש ב-Express שמאפשר לקבץ נתיבים קשורים יחד.
 
@@ -9,4 +9,4 @@ router.post('/register', registerUser); // כאשר זו הכתובת הוא מ�
 router.get('/me', requireAuth, getCurrentUser);
 router.post('/logout', requireAuth, logoutUser);
 
-module.exports = router; // ייצוא כדי לייבא בקובץ השרת הראשי
+export default router; // ייצוא כדי לייבא בקובץ השרת הראשי

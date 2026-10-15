@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
+import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import User from '../models/user.model.js';
+import { isAdminUser } from '../config/admin.config.js';
 
 const requireAuth = async (req, res, next) => {
     const authorization = req.get('authorization') || '';
@@ -43,4 +44,11 @@ const requireAuth = async (req, res, next) => {
 
 
 
-module.exports = requireAuth;
+const requireAdmin = (req, res, next) => {
+    if (!isAdminUser(req.user)) {
+        return res.status(403).json({ message: 'אין לך הרשאה לבצע פעולה זו' });
+    }
+    return next();
+};
+
+export { requireAuth, requireAdmin };

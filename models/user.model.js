@@ -1,5 +1,5 @@
-const mongoose = require('mongoose'); // ייבוא הסיפרייה כדי לאפשר בניית סכמה
-const bcrypt = require('bcrypt'); // ספריה המשתמשת להצפנה מאובטחת
+import mongoose from 'mongoose'; // ייבוא הסיפרייה כדי לאפשר בניית סכמה
+import bcrypt from 'bcrypt'; // ספריה המשתמשת להצפנה מאובטחת
 
 // הגדרת מבנה נתונים חדש
 const userSchema = new mongoose.Schema({
@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
         required: true,
         select: false,//מונע מהסיסמה לחזור כברירת מחדל בשאילתות חיפוש
         minlength: 8,
-        maxlength: 12 
+        maxlength: 128
     },
     role: {
         type: String,
@@ -58,4 +58,4 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 // ייצור המודל על שם USER וייצוא לשימוש במקומות אחרים
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model('User', userSchema);

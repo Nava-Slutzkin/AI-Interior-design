@@ -1,10 +1,6 @@
-const User = require('../models/user.model.js');
-const jwt = require('jsonwebtoken');
-
-const ADMIN_EMAILS = new Set([
-    process.env.ADMIN1_EMAIL,
-    process.env.ADMIN2_EMAIL
-].map((email) => String(email || '').trim().toLowerCase()).filter(Boolean));
+import User from '../models/user.model.js';
+import jwt from 'jsonwebtoken';
+import { ADMIN_EMAILS } from '../config/admin.config.js';
 
 const normalizeRole = (email) => {
     const normalizedEmail = String(email || '').trim().toLowerCase();
@@ -139,4 +135,4 @@ const logoutUser = (req, res) => {
     return res.status(200).json({ message: 'Logged out.' });
 };
 
-module.exports = { loginUser, registerUser, getCurrentUser, logoutUser };
+export { loginUser, registerUser, getCurrentUser, logoutUser };

@@ -1,6 +1,9 @@
-const crypto = require('node:crypto');
-const fs = require('node:fs');
-const path = require('node:path');
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const envPath = path.resolve(__dirname, '..', '.env');
 const envText = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';

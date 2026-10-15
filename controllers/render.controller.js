@@ -1,9 +1,14 @@
-const Render = require('../models/render.model');
-const { OpenAI } = require('openai');
-const mongoose = require('mongoose');
-const fs = require('fs/promises');
-const path = require('path');
-const { randomInt } = require('crypto');
+import Render from '../models/render.model.js';
+import { OpenAI } from 'openai';
+import mongoose from 'mongoose';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { randomInt } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { isAdminUser } from '../config/admin.config.js';
+import { calculateEstimatedBudget, getRequestUserId } from '../utils/render.utils.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const roomImagesDirectory = process.env.ROOM_IMAGES_DIR || path.join(__dirname, '..', 'public', 'room-images');
 const supportedImageExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
@@ -90,7 +95,7 @@ const updateRender = async (req, res) => {
             return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
         }
 
-        const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+        const isAdmin = isAdminUser(req.user);
         const isOwner = String(render.userId) === String(req.userId || req.user?._id);
         if (!isAdmin && !isOwner) {
             return res.status(403).json({ message: 'אין לך הרשאה לעדכן הדמיה זו' });
@@ -121,7 +126,7 @@ const deleteRender = async (req, res) => {
             return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
         }
 
-        const isAdmin = String(req.user?.role || '').toLowerCase() === 'admin';
+        const isAdmin = isAdminUser(req.user);
         const isOwner = req.user && render.userId && render.userId.toString() === req.user._id.toString();
 
         if (!isAdmin && !isOwner) {
@@ -234,8 +239,6 @@ const normalizeDesignItems = (items, budget) => {
     return normalizedItems;
 };
 
-const calculateEstimatedBudget = (items) => items.reduce((total, item) => total + item.price, 0);
-
 const buildAiDesignPayload = async (aiPrompt, attachments = []) => {
     if (!aiApiKey) throw new Error('AI_PROVIDER_NOT_CONFIGURED');
 
@@ -309,7 +312,7 @@ const createRender = async (req, res) => {
             .map(([key, value]) => `${key}: ${value}`)
             .join('. ');
         
-        const userId = req.userId || (req.user && req.user._id);
+        const userId = getRequestUserId(req);
 
         if (!userId) {
             return res.status(401).json({ message: 'משתמש חייב להיות מחובר כדי ליצור הדמיה.' });
@@ -407,7 +410,7 @@ const createRender = async (req, res) => {
 // 4. שליפת כל ההדמיות של המשתמש
 const getUserRenders = async (req, res) => {
     try {
-        const userId = req.userId || (req.user && req.user._id);
+        const userId = getRequestUserId(req);
         const page = Number.parseInt(req.query.page, 10) || 1;
         const limit = Number.parseInt(req.query.limit, 10) || 10;
         const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
@@ -443,7 +446,7 @@ const getUserRenders = async (req, res) => {
 // 5. שליפת הדמיה יחידה לפי מזהה
 const getRenderById = async (req, res) => {
     try {
-        const userId = req.userId || (req.user && req.user._id);
+        const userId = getRequestUserId(req);
         const { id } = req.params;
 
         if (!userId || !mongoose.isValidObjectId(userId)) {
@@ -484,7 +487,7 @@ const getRenderById = async (req, res) => {
     }
 };
 
-module.exports = { 
+export {
     createRender, 
     getUserRenders, 
     getRenderById, 

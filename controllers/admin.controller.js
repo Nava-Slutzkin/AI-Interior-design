@@ -1,14 +1,11 @@
-const User = require('../models/user.model');
-const Render = require('../models/render.model');
+import User from '../models/user.model.js';
+import Render from '../models/render.model.js';
+import { calculateEstimatedBudget } from '../utils/render.utils.js';
+import { isAdminEmail } from '../config/admin.config.js';
 
 //פונקציה לקבלת כל המשתמשים, עם בדיקת הרשאות של admin בלבד
-exports.getAllUsers = async (req, res) => {
+export const getAllUsers = async (req, res) => {
     try {
-        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
-        // בודק אם המשתמש הוא admin
-       if (!isAdmin) {
-            return res.status(403).json({ message: 'אין לך הרשאה לצפות במשתמשים' });
-        } 
         // שליפת המשתמשים ללא שדה הסיסמה (סודיות ואבטחה)
         const users = await User.find()
             .select('-password')
@@ -22,44 +19,11 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-exports.getAllRenders = async (req, res) => {
-    try {
-        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
-        if (!isAdmin) {
-            return res.status(403).json({ message: 'אין לך הרשאה לצפות בהדמיות' });
-        }
-
-        const renders = await Render.find()
-            .populate('userId', 'name email')
-            .sort({ createdAt: -1 })
-            .lean();
-
-        return res.status(200).json(renders.map((render) => ({
-            id: render._id,
-            name: render.formDetails?.roomType ? `עיצוב ${render.formDetails.roomType}` : 'עיצוב',
-            ownerName: render.userId?.name || render.userId?.email || 'משתמש שנמחק',
-            style: render.formDetails?.style || '-',
-            budget: Number(render.formDetails?.budget || 0),
-            createdAt: render.createdAt,
-            userId: render.userId?._id || render.userId || null
-        })));
-    } catch (error) {
-        return res.status(500).json({ message: 'שגיאת שרת בקבלת ההדמיות', error: error.message });
-    }
-};
-
-
 // פונקציה לעדכון תפקיד המשתמש, עם בדיקת הרשאות של admin בלבד   
-exports.updateUserRole = async (req, res) => {
+export const updateUserRole = async (req, res) => {
     const { id } = req.params;
     const { role } = req.body;
     try {
-        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
-        // בודק אם המשתמש הוא admin
-        if (!isAdmin) {
-            return res.status(403).json({ message: 'אין לך הרשאה לעדכן את תפקיד המשתמש' });
-        }   
-
         // בדיקה שנשלח תפקיד לעדכון
         if (!role) {
             return res.status(400).json({ message: 'יש לספק תפקיד חדש לעדכון' });
@@ -69,11 +33,7 @@ exports.updateUserRole = async (req, res) => {
         if (!targetUser) {
             return res.status(404).json({ message: 'משתמש לא נמצא' });
         }
-        const protectedAdminEmails = new Set([
-            '0556758176nr@gmail.com',
-            'nava0533160319@gmail.com'
-        ]);
-        if (String(role).toLowerCase() === 'admin' && !protectedAdminEmails.has(targetUser.email.toLowerCase())) {
+        if (String(role).toLowerCase() === 'admin' && !isAdminEmail(targetUser.email)) {
             return res.status(403).json({ message: 'לא ניתן להעניק הרשאת מנהל לחשבון זה.' });
         }
         if (String(targetUser.role).toLowerCase() === 'admin' && String(role).toLowerCase() !== 'admin') {
@@ -99,15 +59,9 @@ exports.updateUserRole = async (req, res) => {
 };
 
 
-exports.deleteUser = async (req, res) => {
+export const deleteUser = async (req, res) => {
     const { id } = req.params;
     try {
-        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
-        // בודק אם המשתמש הוא admin
-        if (!isAdmin) {
-            return res.status(403).json({ message: 'אין לך הרשאה למחוק משתמשים' });
-        }
-
                // הגנה: מניעת מחיקת החשבון של המנהל עצמו
         if (req.user._id && req.user._id.toString() === id) {
             return res.status(400).json({ message: 'אינך יכול למחוק את החשבון של עצמך' });
@@ -128,33 +82,8 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
-exports.deleteRender = async (req, res) => {
+export const getSystemStats = async (req, res) => {
     try {
-        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
-        if (!isAdmin) {
-            return res.status(403).json({ message: 'אין לך הרשאה למחוק הדמיות' });
-        }
-
-        const deletedRender = await Render.findByIdAndDelete(req.params.id);
-        if (!deletedRender) {
-            return res.status(404).json({ message: 'ההדמיה לא נמצאה' });
-        }
-
-        return res.status(200).json({ message: 'ההדמיה נמחקה בהצלחה' });
-    } catch (error) {
-        return res.status(500).json({ message: 'שגיאת שרת במחיקת ההדמיה', error: error.message });
-    }
-};
-
-
-exports.getSystemStats = async (req, res) => {
-    try {
-        const isAdmin = req.user && String(req.user.role || '').toLowerCase() === 'admin';
-        // בודק אם המשתמש הוא admin
-        if (!isAdmin) {
-            return res.status(403).json({ message: 'אין לך הרשאה לצפייה בסטטיסטיקות המערכת' });
-        }
-
         const totalUsers = await User.countDocuments();
         const totalRenders = await Render.countDocuments();
 
@@ -182,18 +111,15 @@ exports.getSystemStats = async (req, res) => {
     }
 };
 
-exports.getAllRenders = async (req, res) => {
+export const getAllRenders = async (req, res) => {
     try {
-        if (!req.user || String(req.user.role || '').toLowerCase() !== 'admin') {
-            return res.status(403).json({ message: 'אין לך הרשאה לצפות בהדמיות.' });
-        }
         const renders = await Render.find()
             .select('_id userId formDetails promptText summary items estimatedBudget createdAt')
             .populate('userId', 'name email')
             .sort({ createdAt: -1 });
         return res.status(200).json(renders.map((render) => ({
             ...render.toObject(),
-            estimatedBudget: Number(render.estimatedBudget || render.items?.reduce((sum, item) => sum + Number(item.price || 0), 0) || 0),
+            estimatedBudget: Number(render.estimatedBudget || calculateEstimatedBudget(render.items)),
             ownerName: render.userId?.name || render.userId?.email || 'לא ידוע',
             userId: render.userId?._id || render.userId
         })));
@@ -202,11 +128,8 @@ exports.getAllRenders = async (req, res) => {
     }
 };
 
-exports.deleteRender = async (req, res) => {
+export const deleteRender = async (req, res) => {
     try {
-        if (!req.user || String(req.user.role || '').toLowerCase() !== 'admin') {
-            return res.status(403).json({ message: 'אין לך הרשאה למחוק הדמיות.' });
-        }
         const deleted = await Render.findByIdAndDelete(req.params.id);
         if (!deleted) return res.status(404).json({ message: 'ההדמיה לא נמצאה.' });
         return res.status(200).json({ message: 'ההדמיה נמחקה.' });

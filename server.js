@@ -1,18 +1,20 @@
 
-// טוען משתני סביבה מקובץ .env, כמו PORT ו-MONGODB_URI
-require('dotenv').config();
+import 'dotenv/config';
 
 // מייבא את הספריות הנדרשות לשרת
-const express = require('express');
-const path = require('path');
-const cors = require('cors');
-const session = require('express-session');
-const { MongoStore } = require('connect-mongo');
-const mongoose = require('mongoose');
-const authRoutes = require('./routers/auth.router.js'); //מייבאת את הנתונים מהקובץ הזה
-const renderRoutes = require('./routers/render.router.js'); // ייבוא נתיבי ההדמיות.
-const adminRoutes = require('./routers/admin.router.js');
-const {createScheduleBlocker,createIpBlocker,createErrorLogger} = require('./middlewares/custom.middleware.js'); // ייבוא המידלוור המותאם אישית
+import express from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import cors from 'cors';
+import session from 'express-session';
+import { MongoStore } from 'connect-mongo';
+import mongoose from 'mongoose';
+import authRoutes from './routers/auth.router.js'; //מייבאת את הנתונים מהקובץ הזה
+import renderRoutes from './routers/render.router.js'; // ייבוא נתיבי ההדמיות.
+import adminRoutes from './routers/admin.router.js';
+import { createScheduleBlocker, createIpBlocker, createErrorLogger } from './middlewares/custom.middleware.js'; // ייבוא המידלוור המותאם אישית
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 
 // יוצר מופע של השרת
